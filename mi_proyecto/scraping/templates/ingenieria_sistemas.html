@@ -1,0 +1,24 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ingeniería de Sistemas</title>
+</head>
+<body>
+    <h1>Ingeniería de Sistemas</h1>
+    <a href="{% url 'entry_new' %}">Add new entry</a>
+    <ul>
+        {% for entry in entries %}
+            <li>
+                <a href="{% url 'entry_detail' entry.pk %}">{{ entry.name }}</a>
+                <a href="{% url 'entry_edit' entry.pk %}">Edit</a>
+                <a href="{% url 'entry_delete' entry.pk %}">Delete</a>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
+
+
+
+

@@ -1,0 +1,28 @@
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PEIPI</title>
+</head>
+<body>
+    <h1>Docentes</h1>
+    <a href="{% url 'entry_new' %}">Añadir nuevo Docente</a>
+    <ul>
+        {% for entry in entries %}
+            <li>
+                <a href="{% url 'entry_detail' entry.pk %}">{{ entry.name }}</a>
+                <a href="{% url 'entry_edit' entry.pk %}">Edit</a>
+                <a href="{% url 'entry_delete' entry.pk %}">Delete</a>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
+
+

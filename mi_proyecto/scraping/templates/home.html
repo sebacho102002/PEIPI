@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load static %} <!-- Carga la etiqueta static -->
+
+{% block content %}
+<main class="main-container">
+
+<!-- Aquí va el resto de tu contenido actual -->
+<div class="content-container">
+    <h2 class="heading">PROGRAMAS DE INGENIERÍA</h2>
+    <div class="grid-container">
+        <div class="grid-item">
+            <a class="img-carrera" href="#">
+                <div class="overlay"></div>
+                <img src="{% static 'img/bioingenieria.jpg' %}" alt="BIOINGENIERÍA">
+                <span class="text">BIOINGENIERÍA</span>
+            </a>
+            <a class="img-carrera" href="#">
+                <div class="overlay"></div>
+                <img src="{% static 'img/comercial.jpg' %}" alt="INGENIERÍA COMERCIAL">
+                <span class="text">INGENIERÍA COMERCIAL</span>
+            </a>
+            <a class="img-carrera" href="{% url 'ingenieria_sistemas_entries' %}">
+                <div class="overlay"></div>
+                <img src="{% static 'img/sistemas.jpg' %}" alt="INGENIERÍA DE SISTEMAS">
+                <span class="text">INGENIERÍA DE SISTEMAS</span>
+            </a>
+        </div>
+        <div class="grid-item">
+            <a class="img-carrera" href="#">
+                <div class="overlay"></div>
+                <img src="{% static 'img/electronica.jpg' %}" alt="INGENIERÍA ELECTRÓNICA">
+                <span class="text">INGENIERÍA ELECTRÓNICA</span>
+            </a>
+            <a class="img-carrera" href="#">
+                <div class="overlay"></div>
+                <img src="{% static 'img/energias.jpg' %}" alt="INGENIERÍA EN ENERGÍAS">
+                <span class="text">INGENIERÍA EN ENERGÍAS</span>
+            </a>
+            <a class="img-carrera" href="#">
+                <div class="overlay"></div>
+                <img src="{% static 'img/industrial.jpg' %}" alt="INGENIERÍA INDUSTRIAL">
+                <span class="text">INGENIERÍA INDUSTRIAL</span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

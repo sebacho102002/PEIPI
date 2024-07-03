@@ -1,0 +1,20 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Entry Details</title>
+</head>
+<body>
+    <h1>{{ entry.name }}</h1>
+    <p>URL: <a href="{{ entry.href }}">{{ entry.href }}</a></p>
+    
+    <h2>Extracted Data</h2>
+    <ul>
+        {% for extracted_data in entry.extracteddata_set.all %}
+            <li>{{ extracted_data.data }}</li>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'entry_list' %}">Back to list</a>
+</body>
+</html>

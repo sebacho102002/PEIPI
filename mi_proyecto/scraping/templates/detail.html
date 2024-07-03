@@ -1,0 +1,16 @@
+
+
+{% extends 'base.html' %}
+
+{% block content %}
+    <h1>{{ entry.name }}</h1>
+    <div>
+        <p>URL: <a href="{{ entry.href }}">{{ entry.href }}</a></p>
+        <p>Data:</p>
+        <ul>
+            {% for extracted_data in entry.extracteddata_set.all %}
+                <li>{{ extracted_data.data }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+{% endblock %}

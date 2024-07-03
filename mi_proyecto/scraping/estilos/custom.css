@@ -1,0 +1,86 @@
+/* custom.css */
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+}
+
+.main-container {
+    height: 18rem; /* h-72 en Tailwind */
+    padding-left: 6rem; /* px-24 en Tailwind */
+    padding-right: 6rem; /* px-24 en Tailwind */
+    padding-top: 2.5rem; /* pt-10 en Tailwind */
+    border-top: 1px solid #D1D5DB; /* border-t border-gray-300 en Tailwind */
+    display: flex; /* flex en Tailwind */
+    align-items: center; /* items-center en Tailwind */
+    justify-content: space-between; /* justify-between en Tailwind */
+}
+
+.logo-container {
+    display: flex; /* flex en Tailwind */
+    align-items: center; /* items-center en Tailwind */
+}
+
+.logo {
+    height: 3rem; /* h-12 en Tailwind */
+}
+
+.logout-link {
+    color: #4B5563; /* text-gray-600 en Tailwind */
+    text-decoration: none;
+}
+
+.logout-link:hover {
+    color: #111827; /* hover:text-gray-900 en Tailwind */
+}
+
+.content-container {
+    padding-left: 6rem; /* px-24 en Tailwind */
+    padding-right: 6rem; /* px-24 en Tailwind */
+}
+
+.heading {
+    margin-bottom: 4%; /* mb-[4%] en Tailwind */
+    text-align: center;
+    font-size: 1.875rem; /* text-3xl en Tailwind */
+    font-weight: 600; /* font-semibold en Tailwind */
+}
+
+.grid-container {
+    display: grid; /* grid en Tailwind */
+    grid-template-columns: repeat(2, 1fr); /* grid-cols-2 en Tailwind */
+    gap: 1.5rem; /* gap-6 en Tailwind */
+}
+
+.grid-item {
+    display: grid; /* grid en Tailwind */
+    grid-template-columns: repeat(3, 1fr); /* grid-cols-3 en Tailwind */
+    gap: 1.5rem; /* gap-6 en Tailwind */
+}
+
+.img-carrera {
+    position: relative;
+    width: 100%; /* Para que ocupe todo el ancho del contenedor */
+    max-width: 100px; /* Limita el tamaño máximo */
+    height: auto; /* Mantiene la proporción de la imagen */
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.img-carrera img {
+    width: 100%; /* Asegura que la imagen llene el contenedor */
+    height: auto; /* Mantiene la proporción de la imagen */
+}
+
+.overlay {
+    /* Añade los estilos de tu overlay aquí */
+}
+
+.text {
+    /* Añade los estilos de tu texto aquí */
+    margin-top: 0.5rem; /* Añade un margen superior para separar el texto de la imagen */
+    font-size: 0.875rem; /* Ajusta el tamaño del texto si es necesario */
+}
