@@ -60,8 +60,8 @@ body {
 
 .img-carrera {
     position: relative;
-    width: 100%; /* Para que ocupe todo el ancho del contenedor */
-    max-width: 100px; /* Limita el tamaño máximo */
+    width: 20%; /* Para que ocupe todo el ancho del contenedor */
+    max-width: 20x; /* Limita el tamaño máximo */
     height: auto; /* Mantiene la proporción de la imagen */
     overflow: hidden;
     display: flex;
@@ -72,12 +72,13 @@ body {
 
 .img-carrera img {
     width: 100%; /* Asegura que la imagen llene el contenedor */
-    height: auto; /* Mantiene la proporción de la imagen */
+    height: 20%; /* Mantiene la proporción de la imagen */
 }
 
-.overlay {
+/*.overlay {*/
     /* Añade los estilos de tu overlay aquí */
-}
+/*}*/
+
 
 .text {
     /* Añade los estilos de tu texto aquí */

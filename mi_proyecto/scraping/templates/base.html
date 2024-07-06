@@ -1,4 +1,4 @@
-{% load static %} <!-- Asegúrate de cargar las etiquetas estáticas al inicio del archivo -->
+{% load static %} <!-- Asegúrate de cargar las etiquetas estáticas -->
 
 <!DOCTYPE html>
 <html lang="en">
@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Mi Proyecto{% endblock %}</title>
     <!-- Bootstrap CSS -->
-    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <!-- Tus estilos personalizados -->
     <link href="{% static 'css/custom.css' %}" rel="stylesheet">
     {% block extra_head %}{% endblock %}
@@ -15,9 +15,9 @@
 <body>
     {% block content %}{% endblock %}
     <!-- Bootstrap JS y dependencias -->
-    <script src="{% static 'js/jquery-3.5.1.slim.min.js' %}"></script>
-    <script src="{% static 'js/popper.min.js' %}"></script>
-    <script src="{% static 'js/bootstrap.min.js' %}"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
     {% block extra_script %}{% endblock %}
 </body>
 </html>
