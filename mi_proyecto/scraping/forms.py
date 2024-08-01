@@ -10,3 +10,6 @@ class ExtractedDataForm(forms.ModelForm):
     class Meta:
         model = ExtractedData
         fields = ['entry', 'data']
+
+
+

@@ -2,12 +2,52 @@
 <html>
 <head>
     <title>Edit Entry</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        a {
+            text-decoration: none;
+            color: #007BFF;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
     <h1>Edit Entry</h1>
     <form method="post">
         {% csrf_token %}
         {{ form.as_p }}
+        <h2>Edit Extracted Data</h2>
+        {{ formset.management_form }}
+        {% for form in formset %}
+            <div>
+                {{ form.as_p }}
+                {% if form.instance.pk %}
+                    <input type="checkbox" name="{{ form.prefix }}-DELETE" id="id_{{ form.prefix }}-DELETE">
+                    <label for="id_{{ form.prefix }}-DELETE">Delete</label>
+                {% endif %}
+            </div>
+        {% endfor %}
         <button type="submit">Save</button>
     </form>
     <a href="{% url 'entry_list' %}">Back to list</a>

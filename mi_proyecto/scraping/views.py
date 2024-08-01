@@ -5,6 +5,9 @@ from .forms import EntryForm, ExtractedDataForm # type: ignore
 from django.http import JsonResponse
 from .models import ExtractedData
 import json
+from scraping.forms import EntryForm, ExtractedDataForm
+from scraping.models import Entry, ExtractedData
+from django.forms import inlineformset_factory
 
 
 
@@ -53,6 +56,8 @@ def entry_new(request):
         form = EntryForm()
     return render(request, 'scraping/entry_edit.html', {'form': form})
 
+
+
 def entry_edit(request, pk):
     entry = get_object_or_404(Entry, pk=pk)
     if request.method == "POST":
@@ -63,6 +68,7 @@ def entry_edit(request, pk):
     else:
         form = EntryForm(instance=entry)
     return render(request, 'scraping/entry_edit.html', {'form': form})
+
 
 def entry_delete(request, pk):
     entry = get_object_or_404(Entry, pk=pk)
@@ -79,3 +85,20 @@ def extracted_data_list(request):
             'data': item.data,
         })
     return JsonResponse(data, safe=False)
+
+def edit_entry(request, pk):
+    entry = get_object_or_404(Entry, pk=pk)
+    ExtractedDataFormSet = inlineformset_factory(Entry, ExtractedData, form=ExtractedDataForm, extra=1, can_delete=True)
+
+    if request.method == "POST":
+        form = EntryForm(request.POST, instance=entry)
+        formset = ExtractedDataFormSet(request.POST, instance=entry)
+        if form.is_valid() and formset.is_valid():
+            form.save()
+            formset.save()
+            return redirect('entry_list')
+    else:
+        form = EntryForm(instance=entry)
+        formset = ExtractedDataFormSet(instance=entry)
+    
+    return render(request, 'scraping/entry_edit.html', {'form': form, 'formset': formset})

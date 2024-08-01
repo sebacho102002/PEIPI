@@ -1,20 +1,28 @@
-
-
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Entry Details</title>
+    <title>DocentesSS</title>
+    <style>
+        .data-section {
+            margin-bottom: 20px;
+        }
+        .data-item {
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 <body>
     <h1>{{ entry.name }}</h1>
     <p>URL: <a href="{{ entry.href }}">{{ entry.href }}</a></p>
     
     <h2>Extracted Data</h2>
-    <ul>
+    <div class="data-section">
         {% for extracted_data in entry.extracteddata_set.all %}
-            <li>{{ extracted_data.data }}</li>
+            <div class="data-item">
+                {{ extracted_data.data }}
+            </div>
         {% endfor %}
-    </ul>
+    </div>
     <a href="{% url 'entry_list' %}">Back to list</a>
 </body>
 </html>

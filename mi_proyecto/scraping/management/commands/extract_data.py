@@ -1,13 +1,23 @@
 import requests
 from bs4 import BeautifulSoup
-import json
 from django.core.management.base import BaseCommand
 from scraping.models import Entry, ExtractedData
+import re
+from django.db import connection
 
 class Command(BaseCommand):
     help = 'Extract data from the web and store it in the database'
 
     def handle(self, *args, **kwargs):
+        # Borrar todos los datos de la tabla ExtractedData y Entry
+        ExtractedData.objects.all().delete()
+        Entry.objects.all().delete()
+
+        # Reiniciar el contador de auto-incremento para ExtractedData y Entry
+        with connection.cursor() as cursor:
+            cursor.execute("DELETE FROM sqlite_sequence WHERE name='scraping_extracteddata';")
+            cursor.execute("DELETE FROM sqlite_sequence WHERE name='scraping_entry';")
+
         url = 'https://scienti.minciencias.gov.co/gruplac/jsp/visualiza/visualizagr.jsp?nro=00000000003118'
         response = requests.get(url)
 
@@ -32,7 +42,6 @@ class Command(BaseCommand):
                 response = requests.get(url)
                 if response.status_code == 200:
                     soup = BeautifulSoup(response.content, 'html.parser')
-                    datos_ordenados = []
 
                     try:
                         parte_especifica_1 = soup.find('body').find('div').find_all('table')[1]
@@ -41,7 +50,9 @@ class Command(BaseCommand):
                             columnas = fila.find_all(['th', 'td'])
                             fila_datos = [c.get_text(strip=True) for c in columnas]
                             fila_limpiada = limpiar_datos(fila_datos)
-                            datos_ordenados.append(fila_limpiada)
+                            for dato in fila_limpiada:
+                                if dato:  # Guardar solo si el dato no está vacío
+                                    ExtractedData.objects.create(entry=entry, data=dato)
 
                         parte_especifica_4 = soup.find('body').find('div').find_all('table')[4]
                         filas_4 = parte_especifica_4.find_all('tr')
@@ -50,15 +61,22 @@ class Command(BaseCommand):
                             columnas_4 = segundo_fila.find_all(['th', 'td'])
                             fila_datos_4 = [c.get_text(strip=True) for c in columnas_4]
                             fila_limpiada_4 = limpiar_datos(fila_datos_4)
-                            datos_ordenados.append(fila_limpiada_4)
-
-                        ExtractedData.objects.create(entry=entry, data=datos_ordenados)
+                            for dato in fila_limpiada_4:
+                                if dato:  # Guardar solo si el dato no está vacío
+                                    ExtractedData.objects.create(entry=entry, data=dato)
                     except Exception as e:
                         self.stdout.write(self.style.ERROR(f"Error processing URL {url}: {e}"))
                 else:
                     self.stdout.write(self.style.ERROR(f"Error accessing URL {url}: {response.status_code}"))
 
         self.stdout.write(self.style.SUCCESS('Data extraction complete'))
+
+
+def extraer_letras(texto):
+    # Expresión regular para letras incluyendo tildes y la letra Ñ
+    letras = re.findall(r'[a-zA-ZáéíóúüÁÉÍÓÚÜñÑ]+', texto)
+    return ' '.join(letras)
+
 
 def limpiar_datos(datos):
     datos_limpios = []
@@ -68,10 +86,12 @@ def limpiar_datos(datos):
             clave = clave.strip()
             valor = valor.strip()
             valor = corregir_formato_texto(valor)
-            datos_limpios.append([clave, valor])
+            datos_limpios.append([extraer_letras(clave), extraer_letras(valor)])
         else:
             dato_limpio = corregir_formato_texto(dato)
-            datos_limpios.append(['', dato_limpio])
+            letras_extraidas = extraer_letras(dato_limpio)
+            if letras_extraidas:  # Añadir solo si no está vacío
+                datos_limpios.append([letras_extraidas])
     return datos_limpios
 
 def corregir_formato_texto(texto):
@@ -87,4 +107,3 @@ def corregir_formato_texto(texto):
     if palabra_actual:
         palabras.append(palabra_actual)
     return ' '.join(palabras)
-
