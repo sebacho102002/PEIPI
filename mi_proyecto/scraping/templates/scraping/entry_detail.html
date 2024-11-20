@@ -1,7 +1,13 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-    <title>DocentesSS</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docente</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
     <style>
         .data-section {
             margin-bottom: 20px;
@@ -12,17 +18,34 @@
     </style>
 </head>
 <body>
-    <h1>{{ entry.name }}</h1>
-    <p>URL: <a href="{{ entry.href }}">{{ entry.href }}</a></p>
-    
-    <h2>Extracted Data</h2>
-    <div class="data-section">
-        {% for extracted_data in entry.extracteddata_set.all %}
-            <div class="data-item">
-                {{ extracted_data.data }}
-            </div>
-        {% endfor %}
+    <div class="container mt-5">
+        <!-- Título del docente -->
+        <h1 class="mb-4 text-primary">{{ entry.name }}</h1>
+
+        <!-- URL del docente -->
+        <p class="mb-4">
+            URL: <a href="{{ entry.href }}" class="text-info">{{ entry.href }}</a>
+        </p>
+
+        <!-- Datos extraídos -->
+        <h2 class="mb-4 text-secondary">Información del Docente</h2>
+        <div class="data-section">
+            <ul class="list-group">
+                {% for extracted_data in entry.extracteddata_set.all %}
+                    <li class="list-group-item data-item">
+                        {{ extracted_data.data }}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- Botón de regreso a la lista -->
+        <a href="{% url 'entry_list' %}" class="btn btn-outline-secondary">Regresar</a>
     </div>
-    <a href="{% url 'entry_list' %}">Back to list</a>
+
+    <!-- Bootstrap JS, Popper.js, and jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

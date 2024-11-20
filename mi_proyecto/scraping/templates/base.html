@@ -11,9 +11,55 @@
     <!-- Tus estilos personalizados -->
     <link href="{% static 'css/custom.css' %}" rel="stylesheet">
     {% block extra_head %}{% endblock %}
+    <style>
+        /* Estilos adicionales para la navbar */
+        .navbar {
+            background-color: #172072; /* Color azul */
+        }
+        .navbar-brand, .navbar-nav .nav-link {
+            color: white !important; /* Texto blanco para mejor contraste */
+        }
+        .navbar-nav .nav-link:hover {
+            color: #cce5ff !important; /* Color al pasar el mouse */
+        }
+        .navbar-logo {
+            width: 80px; /* Ajusta el tamaño del logo */
+            margin-right: 10px; /* Espacio a la derecha del logo */
+        }
+    </style>
 </head>
 <body>
+    <!-- Barra de navegación -->
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <img src="{% static 'img/LogoUSC.png' %}" alt="Logo" class="navbar-logo">
+        <a class="navbar-brand" href="{% url 'entry_list' %}">
+            
+            <h1>PEIPI</h1>
+            <h5>Plataforma para la Extracción de informes de Docentes 
+                e Investigadores</h5>
+
+        </a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto"> <!-- 'ml-auto' para alinear a la derecha -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Docentes
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                        <a class="dropdown-item" href="{% url 'entry_list' %}">Lista de Docentes</a>
+                        <a class="dropdown-item" href="{% url 'entry_new' %}">Añadir Docente</a>
+                    </div>
+                </li>
+                <!-- Puedes agregar más enlaces aquí -->
+            </ul>
+        </div>
+    </nav>
+
     {% block content %}{% endblock %}
+    
     <!-- Bootstrap JS y dependencias -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.4/dist/umd/popper.min.js"></script>
