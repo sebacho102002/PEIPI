@@ -15,6 +15,9 @@
         .data-item {
             margin-bottom: 10px;
         }
+        .data-key {
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -33,7 +36,14 @@
             <ul class="list-group">
                 {% for extracted_data in entry.extracteddata_set.all %}
                     <li class="list-group-item data-item">
-                        {{ extracted_data.data }}
+                        {% with extracted_data.data|split:':' as data_parts %}
+                            {% if data_parts|length > 1 %}
+                                <span class="data-key">{{ data_parts.0 }}</span>: 
+                                <span class="data-value">{{ data_parts.1 }}</span>
+                            {% else %}
+                                <span>{{ extracted_data.data }}</span>
+                            {% endif %}
+                        {% endwith %}
                     </li>
                 {% endfor %}
             </ul>

@@ -9,7 +9,7 @@ class EntryForm(forms.ModelForm):
 class ExtractedDataForm(forms.ModelForm):
     class Meta:
         model = ExtractedData
-        fields = ['entry', 'data']
+        fields = ['entry', 'key', 'value']
 
 
 

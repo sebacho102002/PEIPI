@@ -49,10 +49,7 @@ class Command(BaseCommand):
                         for fila in filas_1:
                             columnas = fila.find_all(['th', 'td'])
                             fila_datos = [c.get_text(strip=True) for c in columnas]
-                            fila_limpiada = limpiar_datos(fila_datos)
-                            for dato in fila_limpiada:
-                                if dato:  # Guardar solo si el dato no está vacío
-                                    ExtractedData.objects.create(entry=entry, data=dato)
+                            guardar_datos(entry, fila_datos)
 
                         parte_especifica_4 = soup.find('body').find('div').find_all('table')[4]
                         filas_4 = parte_especifica_4.find_all('tr')
@@ -60,10 +57,7 @@ class Command(BaseCommand):
                             segundo_fila = filas_4[1]
                             columnas_4 = segundo_fila.find_all(['th', 'td'])
                             fila_datos_4 = [c.get_text(strip=True) for c in columnas_4]
-                            fila_limpiada_4 = limpiar_datos(fila_datos_4)
-                            for dato in fila_limpiada_4:
-                                if dato:  # Guardar solo si el dato no está vacío
-                                    ExtractedData.objects.create(entry=entry, data=dato)
+                            guardar_datos(entry, fila_datos_4)
                     except Exception as e:
                         self.stdout.write(self.style.ERROR(f"Error processing URL {url}: {e}"))
                 else:
@@ -71,14 +65,42 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS('Data extraction complete'))
 
+        # Imprimir los datos estructurados en consola
+        self.stdout.write("\nDatos extraídos:")
+        for entry in Entry.objects.all():
+            self.stdout.write(f"\n=== {entry.name} ===")
+            for dato in ExtractedData.objects.filter(entry=entry):
+                clave, valor = parsear_dato(dato.data)
+                if valor:
+                    self.stdout.write(f"{clave}: {valor}")
+                else:
+                    self.stdout.write(f"{clave}")
+
+
+def guardar_datos(entry, fila_datos):
+    """Procesa y guarda los datos en la base de datos."""
+    fila_limpiada = limpiar_datos(fila_datos)
+    for dato in fila_limpiada:
+        if dato:  # Guardar solo si el dato no está vacío
+            ExtractedData.objects.create(entry=entry, data=dato)
+
+
+def parsear_dato(dato):
+    """Divide un dato en clave y valor para mostrarlo de forma estructurada."""
+    if ':' in dato:
+        clave, valor = dato.split(':', 1)
+        return clave.strip(), valor.strip()
+    return dato.strip(), None
+
 
 def extraer_letras(texto):
-    # Expresión regular para letras incluyendo tildes y la letra Ñ
+    """Extrae solo letras incluyendo tildes y la letra Ñ."""
     letras = re.findall(r'[a-zA-ZáéíóúüÁÉÍÓÚÜñÑ]+', texto)
     return ' '.join(letras)
 
 
 def limpiar_datos(datos):
+    """Limpia y estructura los datos."""
     datos_limpios = []
     for dato in datos:
         if ':' in dato:
@@ -86,16 +108,17 @@ def limpiar_datos(datos):
             clave = clave.strip()
             valor = valor.strip()
             valor = corregir_formato_texto(valor)
-            datos_limpios.append([extraer_letras(clave), extraer_letras(valor)])
+            datos_limpios.append(f"{extraer_letras(clave)}: {extraer_letras(valor)}")
         else:
             dato_limpio = corregir_formato_texto(dato)
             letras_extraidas = extraer_letras(dato_limpio)
             if letras_extraidas:  # Añadir solo si no está vacío
-                datos_limpios.append([letras_extraidas])
+                datos_limpios.append(letras_extraidas)
     return datos_limpios
 
+
 def corregir_formato_texto(texto):
-    # Dividir palabras unidas en mayúsculas y otros ajustes de formato
+    """Divide palabras unidas y realiza ajustes de formato."""
     palabras = []
     palabra_actual = ''
     for caracter in texto:
