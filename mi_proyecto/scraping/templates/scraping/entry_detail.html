@@ -15,6 +15,18 @@
         .data-item {
             margin-bottom: 10px;
         }
+        .table-custom {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table-custom th, .table-custom td {
+            border: 1px solid #ddd;
+            padding: 8px;
+        }
+        .table-custom th {
+            background-color: #f8f9fa;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
@@ -24,20 +36,45 @@
 
         <!-- URL del docente -->
         <p class="mb-4">
-            URL: <a href="{{ entry.href }}" class="text-info">{{ entry.href }}</a>
+            URL: <a href="{{ entry.href }}" class="text-info" target="_blank">{{ entry.href }}</a>
         </p>
 
-        <!-- Datos extraídos -->
-        <h2 class="mb-4 text-secondary">Información del Docente</h2>
+        <!-- Información Personal -->
+        {% if entry.personalinfo %}
+        <h2 class="mb-4 text-secondary">Información Personal</h2>
         <div class="data-section">
-            <ul class="list-group">
-                {% for extracted_data in entry.extracteddata_set.all %}
-                    <li class="list-group-item data-item">
-                        {{ extracted_data.data }}
-                    </li>
-                {% endfor %}
-            </ul>
+            <table class="table-custom">
+                <tr><th>Nombre</th><td>{{ entry.personalinfo.nombre }}</td></tr>
+                <tr><th>Identificación</th><td>{{ entry.personalinfo.identificacion }}</td></tr>
+                <tr><th>Nacionalidad</th><td>{{ entry.personalinfo.nacionalidad }}</td></tr>
+                <tr><th>Correo</th><td>{{ entry.personalinfo.email }}</td></tr>
+                <tr><th>Teléfono</th><td>{{ entry.personalinfo.telefono }}</td></tr>
+            </table>
         </div>
+        {% endif %}
+
+        <!-- Información de Investigación -->
+        {% if entry.investigacion_set.all %}
+        <h2 class="mb-4 text-secondary">Investigaciones</h2>
+        <div class="data-section">
+            <table class="table-custom">
+                <tr>
+                    <th>Título</th>
+                    <th>Tipo</th>
+                    <th>Fecha</th>
+                    <th>Institución</th>
+                </tr>
+                {% for investigacion in entry.investigacion_set.all %}
+                <tr>
+                    <td>{{ investigacion.titulo }}</td>
+                    <td>{{ investigacion.tipo }}</td>
+                    <td>{{ investigacion.fecha }}</td>
+                    <td>{{ investigacion.institucion }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+        {% endif %}
 
         <!-- Botón de regreso a la lista -->
         <a href="{% url 'entry_list' %}" class="btn btn-outline-secondary">Regresar</a>

@@ -1,7 +1,6 @@
 from django.contrib import admin
-from .models import Entry, ExtractedData
+from .models import Entry, PersonalInfo, Investigacion
 
 admin.site.register(Entry)
-admin.site.register(ExtractedData)
-#user: peipi
-#password: J1193547430j.
+admin.site.register(PersonalInfo)
+admin.site.register(Investigacion)
