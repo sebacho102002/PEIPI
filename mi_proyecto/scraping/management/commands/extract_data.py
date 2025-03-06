@@ -2,96 +2,133 @@ import requests
 from bs4 import BeautifulSoup
 from django.core.management.base import BaseCommand
 from scraping.models import Entry, PersonalInfo, Investigacion
-from django.db import connection
+import re
+
+# URL del listado de docentes en Gruplac
+GRUPLAC_URL = "https://scienti.minciencias.gov.co/gruplac/jsp/visualiza/visualizagr.jsp?nro=00000000003118"
 
 class Command(BaseCommand):
-    help = 'Extract data from the web and store it in the database'
+    help = 'Extrae datos de Gruplac y los almacena en la base de datos'
 
     def handle(self, *args, **kwargs):
-        # Limpiar base de datos
+        self.stdout.write("🟢 Iniciando extracción de datos...\n")
+
+        # 🔹 Limpiar la base de datos antes de insertar nuevos datos
+        Entry.objects.all().delete()
         PersonalInfo.objects.all().delete()
         Investigacion.objects.all().delete()
-        Entry.objects.all().delete()
 
-        # Reiniciar secuencias de auto-incremento
-        with connection.cursor() as cursor:
-            cursor.execute("DELETE FROM sqlite_sequence WHERE name='scraping_entry';")
-            cursor.execute("DELETE FROM sqlite_sequence WHERE name='scraping_personalinfo';")
-            cursor.execute("DELETE FROM sqlite_sequence WHERE name='scraping_investigacion';")
+        # 🔹 Obtener lista de docentes
+        docentes = self.obtener_docentes()
 
-        url = 'https://scienti.minciencias.gov.co/gruplac/jsp/visualiza/visualizagr.jsp?nro=00000000003118'
-        response = requests.get(url)
-
-        if response.status_code == 200:
-            soup = BeautifulSoup(response.content, 'html.parser')
-            table = soup.find_all('table')[4]  # Tabla donde están los docentes
-
-            for row in table.find_all('tr'):
-                cells = row.find_all('td')
-                if len(cells) > 1:
-                    name_cell = cells[0]
-                    link = name_cell.find('a')
-                    if link:
-                        name = name_cell.text.strip()
-                        href = link.get('href')
-                        entry = Entry.objects.create(name=name, href=href)
-
-                        # Extraer información detallada del docente
-                        self.extract_docente_data(entry)
-
-        self.stdout.write(self.style.SUCCESS('Data extraction complete'))
-
-    def extract_docente_data(self, entry):
-        """Extrae los datos personales e investigaciones de cada docente"""
-        response = requests.get(entry.href)
-        if response.status_code != 200:
-            self.stdout.write(self.style.ERROR(f"Error accessing URL {entry.href}: {response.status_code}"))
+        if not docentes:
+            self.stdout.write("⚠️ No se encontraron docentes en la tabla 4.")
             return
 
-        soup = BeautifulSoup(response.content, 'html.parser')
+        # 🔹 Procesar cada docente
+        for nombre, perfil_url in docentes:
+            self.stdout.write(f"\n🔎 Procesando: {nombre}")
+            entry = Entry.objects.create(name=nombre, href=perfil_url)
 
-        try:
-            # Extraer información personal
-            personal_info_table = soup.find('body').find('div').find_all('table')[1]
-            filas_info = personal_info_table.find_all('tr')
+            # 🔹 Extraer y almacenar información personal del docente
+            info_personal = self.obtener_info_personal(perfil_url, entry)
+            if info_personal:
+                PersonalInfo.objects.create(entry=entry, **info_personal)
 
-            personal_data = {}
-            for fila in filas_info:
-                columnas = fila.find_all(['th', 'td'])
-                if len(columnas) == 2:
-                    clave = columnas[0].get_text(strip=True)
-                    valor = columnas[1].get_text(strip=True)
-                    personal_data[clave] = valor
+            # 🔹 Extraer y almacenar investigaciones
+            investigaciones = self.obtener_investigaciones(perfil_url, entry)
+            for inv in investigaciones:
+                Investigacion.objects.create(entry=entry, **inv)
 
-            # Guardar información personal
-            PersonalInfo.objects.create(
-                entry=entry,
-                nombre=personal_data.get("Nombre", ""),
-                identificacion=personal_data.get("Identificación", ""),
-                nacionalidad=personal_data.get("Nacionalidad", ""),
-                email=personal_data.get("Correo electrónico", ""),
-                telefono=personal_data.get("Teléfono", ""),
-            )
+        self.stdout.write("\n✅ Extracción y almacenamiento completados exitosamente.")
 
-            # Extraer información de investigaciones
-            investigaciones_table = soup.find('body').find('div').find_all('table')[4]
-            filas_inv = investigaciones_table.find_all('tr')[1:]  # Omitir encabezado
+    def obtener_docentes(self):
+        """Extrae la lista de docentes del grupo y sus enlaces de perfil."""
+        response = requests.get(GRUPLAC_URL)
+        if response.status_code != 200:
+            self.stdout.write(f"🔴 Error al acceder a la URL del grupo: {response.status_code}")
+            return []
 
-            for fila in filas_inv:
-                columnas = fila.find_all(['th', 'td'])
-                if len(columnas) >= 3:
-                    titulo = columnas[0].get_text(strip=True)
-                    tipo = columnas[1].get_text(strip=True)
-                    fecha = columnas[2].get_text(strip=True)
-                    institucion = columnas[3].get_text(strip=True) if len(columnas) > 3 else ""
+        soup = BeautifulSoup(response.content, "html.parser")
+        tables = soup.find_all("table")
 
-                    Investigacion.objects.create(
-                        entry=entry,
-                        titulo=titulo,
-                        tipo=tipo,
-                        fecha=fecha,
-                        institucion=institucion
-                    )
+        if len(tables) < 5:
+            self.stdout.write("⚠️ No hay suficientes tablas en la página. Verifica la URL.")
+            return []
 
-        except Exception as e:
-            self.stdout.write(self.style.ERROR(f"Error processing {entry.href}: {e}"))
+        # 📌 La tabla 4 contiene la información de los docentes
+        docentes_tabla = tables[4]
+        docentes = []
+
+        for row in docentes_tabla.find_all("tr")[1:]:  # Omitimos la cabecera
+            columns = row.find_all("td")
+            if len(columns) > 0:
+                name = columns[0].get_text(strip=True)
+                link = columns[0].find("a")
+                href = link.get("href") if link else None
+
+                if href:
+                    full_url = href if href.startswith("http") else f"https://scienti.minciencias.gov.co{href}"
+                    docentes.append((name, full_url))
+
+        return docentes
+
+    def obtener_info_personal(self, url, entry):
+        """Extrae información personal del docente desde su perfil."""
+        response = requests.get(url)
+        if response.status_code != 200:
+            self.stdout.write(f"⚠️ No se pudo acceder al perfil de {entry.name}.")
+            return None
+
+        soup = BeautifulSoup(response.content, "html.parser")
+        tables = soup.find_all("table")
+
+        if len(tables) < 1:
+            self.stdout.write(f"⚠️ No hay tablas suficientes en el perfil de {entry.name}.")
+            return None
+
+        # 📌 La tabla 0 usualmente contiene los datos personales
+        datos = tables[0].find_all("td")
+
+        info_personal = {
+            "nombre": self.extraer_texto(datos, 5),
+            "nombre_citaciones": self.extraer_texto(datos, 7),
+            "categoria": self.extraer_texto(datos, 3),
+            "par_evaluador": "Par evaluador" in self.extraer_texto(datos, 1),
+            "nacionalidad": self.extraer_texto(datos, 9),
+            "sexo": self.extraer_texto(datos, 11),
+        }
+
+        return info_personal
+
+    def obtener_investigaciones(self, url, entry):
+        """Extrae la lista de investigaciones del docente."""
+        response = requests.get(url)
+        if response.status_code != 200:
+            return []
+
+        soup = BeautifulSoup(response.content, "html.parser")
+        tables = soup.find_all("table")
+
+        if len(tables) < 5:
+            return []
+
+        investigaciones = []
+        tabla_investigaciones = tables[4]  # 📌 La tabla 4 contiene las investigaciones
+
+        for row in tabla_investigaciones.find_all("tr")[1:]:  # Omitimos la cabecera
+            columns = row.find_all("td")
+            if len(columns) >= 4:
+                inv = {
+                    "titulo": columns[0].get_text(strip=True),
+                    "tipo": columns[1].get_text(strip=True),
+                    "fecha": columns[2].get_text(strip=True),
+                    "institucion": columns[3].get_text(strip=True),
+                }
+                investigaciones.append(inv)
+
+        return investigaciones
+
+    def extraer_texto(self, elementos, indice):
+        """Extrae texto de un índice específico en una lista de elementos."""
+        return elementos[indice].get_text(strip=True) if len(elementos) > indice else ""

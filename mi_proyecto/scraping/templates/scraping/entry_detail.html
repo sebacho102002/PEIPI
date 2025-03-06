@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Docente</title>
+    <title>{{ entry.name }}</title>
     
     <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
@@ -11,9 +11,6 @@
     <style>
         .data-section {
             margin-bottom: 20px;
-        }
-        .data-item {
-            margin-bottom: 10px;
         }
         .table-custom {
             width: 100%;
@@ -31,58 +28,27 @@
 </head>
 <body>
     <div class="container mt-5">
-        <!-- Título del docente -->
-        <h1 class="mb-4 text-primary">{{ entry.name }}</h1>
+        <h1 class="mb-4 text-primary">{{ entry.id }}.- {{ entry.name }}</h1>
 
-        <!-- URL del docente -->
         <p class="mb-4">
             URL: <a href="{{ entry.href }}" class="text-info" target="_blank">{{ entry.href }}</a>
         </p>
 
-        <!-- Información Personal -->
-        {% if entry.personalinfo %}
+        {% if personal_info %}
         <h2 class="mb-4 text-secondary">Información Personal</h2>
-        <div class="data-section">
-            <table class="table-custom">
-                <tr><th>Nombre</th><td>{{ entry.personalinfo.nombre }}</td></tr>
-                <tr><th>Identificación</th><td>{{ entry.personalinfo.identificacion }}</td></tr>
-                <tr><th>Nacionalidad</th><td>{{ entry.personalinfo.nacionalidad }}</td></tr>
-                <tr><th>Correo</th><td>{{ entry.personalinfo.email }}</td></tr>
-                <tr><th>Teléfono</th><td>{{ entry.personalinfo.telefono }}</td></tr>
-            </table>
-        </div>
+        <table class="table-custom">
+            <tr><th>Nombre</th><td>{{ personal_info.nombre }}</td></tr>
+            <tr><th>Nombre en Citaciones</th><td>{{ personal_info.nombre_citaciones|default:"No disponible" }}</td></tr>
+            <tr><th>Categoría</th><td>{{ personal_info.categoria|default:"No disponible" }}</td></tr>
+            <tr><th>Par Evaluador</th><td>{% if personal_info.par_evaluador %} Sí {% else %} No {% endif %}</td></tr>
+            <tr><th>Nacionalidad</th><td>{{ personal_info.nacionalidad }}</td></tr>
+            <tr><th>Sexo</th><td>{{ personal_info.sexo|default:"No disponible" }}</td></tr>
+        </table>
+        {% else %}
+        <p>No se encontró información personal.</p>
         {% endif %}
 
-        <!-- Información de Investigación -->
-        {% if entry.investigacion_set.all %}
-        <h2 class="mb-4 text-secondary">Investigaciones</h2>
-        <div class="data-section">
-            <table class="table-custom">
-                <tr>
-                    <th>Título</th>
-                    <th>Tipo</th>
-                    <th>Fecha</th>
-                    <th>Institución</th>
-                </tr>
-                {% for investigacion in entry.investigacion_set.all %}
-                <tr>
-                    <td>{{ investigacion.titulo }}</td>
-                    <td>{{ investigacion.tipo }}</td>
-                    <td>{{ investigacion.fecha }}</td>
-                    <td>{{ investigacion.institucion }}</td>
-                </tr>
-                {% endfor %}
-            </table>
-        </div>
-        {% endif %}
-
-        <!-- Botón de regreso a la lista -->
         <a href="{% url 'entry_list' %}" class="btn btn-outline-secondary">Regresar</a>
     </div>
-
-    <!-- Bootstrap JS, Popper.js, and jQuery -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
 </body>
 </html>

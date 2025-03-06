@@ -4,18 +4,17 @@ from .forms import EntryForm  # Eliminamos ExtractedDataForm, ya no es necesario
 from django.http import JsonResponse
 import json
 import os
-from django.forms import inlineformset_factory
 
-# Página de inicio
+# 📌 Página de inicio
 def home_page(request):
     return render(request, 'home.html')
 
-# Base
+# 📌 Base
 def base(request):
-    entry = "Some entry data"  
+    entry = "Some entry data"
     return render(request, 'base.html', {'entry': entry})
 
-# Vista de Ingeniería de Sistemas
+# 📌 Vista de Ingeniería de Sistemas
 def ingenieria_sistemas_view(request):
     json_file_path = os.path.join(os.path.dirname(__file__), '..', 'data.json')
 
@@ -27,21 +26,21 @@ def ingenieria_sistemas_view(request):
 
     return render(request, 'ingenieria_sistemas.html', {'data': data})
 
-# Detalle de una entrada
+# 📌 Detalle de una entrada
 def detail_page(request, pk):
     entry = get_object_or_404(Entry, pk=pk)
     return render(request, 'detail.html', {'entry': entry})
 
-# Lista de todas las entradas
+# 📌 Lista de todas las entradas
 def entry_list(request):
     entries = Entry.objects.all()
     return render(request, 'scraping/entry_list.html', {'entries': entries})
 
-# Vista detallada de un docente
+# 📌 Vista detallada de un docente
 def entry_detail(request, pk):
     entry = get_object_or_404(Entry, pk=pk)
     
-    # Obtener datos personales e investigaciones del docente
+    # Obtener información personal e investigaciones del docente
     personal_info = PersonalInfo.objects.filter(entry=entry).first()
     investigaciones = Investigacion.objects.filter(entry=entry)
 
@@ -51,7 +50,7 @@ def entry_detail(request, pk):
         'investigaciones': investigaciones
     })
 
-# Crear una nueva entrada
+# 📌 Crear una nueva entrada
 def entry_new(request):
     if request.method == "POST":
         form = EntryForm(request.POST)
@@ -62,7 +61,7 @@ def entry_new(request):
         form = EntryForm()
     return render(request, 'scraping/entry_edit.html', {'form': form})
 
-# Editar una entrada
+# 📌 Editar una entrada
 def entry_edit(request, pk):
     entry = get_object_or_404(Entry, pk=pk)
     if request.method == "POST":
@@ -74,13 +73,13 @@ def entry_edit(request, pk):
         form = EntryForm(instance=entry)
     return render(request, 'scraping/entry_edit.html', {'form': form})
 
-# Eliminar una entrada
+# 📌 Eliminar una entrada
 def entry_delete(request, pk):
     entry = get_object_or_404(Entry, pk=pk)
     entry.delete()
     return redirect('entry_list')
 
-# Generar JSON con los datos de los docentes
+# 📌 Generar JSON con los datos de los docentes
 def extracted_data_list(request):
     entries = Entry.objects.all()
     data = []
