@@ -2,9 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from django.core.management.base import BaseCommand
 from scraping.models import Entry, PersonalInfo, Investigacion
-import re
 
-# URL del listado de docentes en Gruplac
 GRUPLAC_URL = "https://scienti.minciencias.gov.co/gruplac/jsp/visualiza/visualizagr.jsp?nro=00000000003118"
 
 class Command(BaseCommand):
@@ -25,7 +23,6 @@ class Command(BaseCommand):
             self.stdout.write("⚠️ No se encontraron docentes en la tabla 4.")
             return
 
-        # 🔹 Procesar cada docente
         for nombre, perfil_url in docentes:
             self.stdout.write(f"\n🔎 Procesando: {nombre}")
             entry = Entry.objects.create(name=nombre, href=perfil_url)
@@ -56,11 +53,10 @@ class Command(BaseCommand):
             self.stdout.write("⚠️ No hay suficientes tablas en la página. Verifica la URL.")
             return []
 
-        # 📌 La tabla 4 contiene la información de los docentes
         docentes_tabla = tables[4]
         docentes = []
 
-        for row in docentes_tabla.find_all("tr")[1:]:  # Omitimos la cabecera
+        for row in docentes_tabla.find_all("tr")[1:]:
             columns = row.find_all("td")
             if len(columns) > 0:
                 name = columns[0].get_text(strip=True)
@@ -74,7 +70,7 @@ class Command(BaseCommand):
         return docentes
 
     def obtener_info_personal(self, url, entry):
-        """Extrae información personal del docente desde su perfil."""
+        """Extrae información personal del docente desde su perfil en CvLAC."""
         response = requests.get(url)
         if response.status_code != 200:
             self.stdout.write(f"⚠️ No se pudo acceder al perfil de {entry.name}.")
@@ -83,21 +79,42 @@ class Command(BaseCommand):
         soup = BeautifulSoup(response.content, "html.parser")
         tables = soup.find_all("table")
 
-        if len(tables) < 1:
-            self.stdout.write(f"⚠️ No hay tablas suficientes en el perfil de {entry.name}.")
+        if not tables:
+            self.stdout.write(f"⚠️ No hay tablas en el perfil de {entry.name}.")
             return None
 
-        # 📌 La tabla 0 usualmente contiene los datos personales
-        datos = tables[0].find_all("td")
-
         info_personal = {
-            "nombre": self.extraer_texto(datos, 5),
-            "nombre_citaciones": self.extraer_texto(datos, 7),
-            "categoria": self.extraer_texto(datos, 3),
-            "par_evaluador": "Par evaluador" in self.extraer_texto(datos, 1),
-            "nacionalidad": self.extraer_texto(datos, 9),
-            "sexo": self.extraer_texto(datos, 11),
+            "nombre": entry.name,
+            "nombre_citaciones": "",
+            "categoria": "",
+            "par_evaluador": False,
+            "nacionalidad": "",
+            "sexo": "",
         }
+
+        # 🔹 Buscar información dentro de todas las tablas
+        for table in tables:
+            rows = table.find_all("tr")
+            for row in rows:
+                columns = row.find_all("td")
+                if len(columns) >= 2:
+                    clave = columns[0].get_text(strip=True).lower()
+                    valor = columns[1].get_text(strip=True)
+
+                    if "categoría" in clave and not info_personal["categoria"]:
+                        info_personal["categoria"] = valor
+                    elif "par evaluador" in clave:
+                        info_personal["par_evaluador"] = True
+                    elif "nombre en citaciones" in clave:
+                        info_personal["nombre_citaciones"] = valor
+                    elif "nacionalidad" in clave:
+                        info_personal["nacionalidad"] = valor
+                    elif "sexo" in clave:
+                        info_personal["sexo"] = valor
+
+        # 🔹 Eliminar datos no válidos en "Categoría"
+        if "Tipo de proyecto" in info_personal["categoria"]:
+            info_personal["categoria"] = ""
 
         return info_personal
 
@@ -114,9 +131,9 @@ class Command(BaseCommand):
             return []
 
         investigaciones = []
-        tabla_investigaciones = tables[4]  # 📌 La tabla 4 contiene las investigaciones
+        tabla_investigaciones = tables[4]
 
-        for row in tabla_investigaciones.find_all("tr")[1:]:  # Omitimos la cabecera
+        for row in tabla_investigaciones.find_all("tr")[1:]:
             columns = row.find_all("td")
             if len(columns) >= 4:
                 inv = {
@@ -128,7 +145,3 @@ class Command(BaseCommand):
                 investigaciones.append(inv)
 
         return investigaciones
-
-    def extraer_texto(self, elementos, indice):
-        """Extrae texto de un índice específico en una lista de elementos."""
-        return elementos[indice].get_text(strip=True) if len(elementos) > indice else ""
