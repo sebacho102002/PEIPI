@@ -48,6 +48,32 @@
         <p>No se encontró información personal.</p>
         {% endif %}
 
+        <h2 class="mb-4 text-secondary">Investigaciones</h2>
+        {% if investigaciones %}
+        <table class="table-custom">
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Tipo</th>
+                    <th>Fecha</th>
+                    <th>Institución</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for inv in investigaciones %}
+                <tr>
+                    <td>{{ inv.titulo }}</td>
+                    <td>{{ inv.tipo|default:"No especificado" }}</td>
+                    <td>{{ inv.fecha|default:"No especificada" }}</td>
+                    <td>{{ inv.institucion|default:"No especificada" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No hay investigaciones registradas.</p>
+        {% endif %}
+
         <a href="{% url 'entry_list' %}" class="btn btn-outline-secondary">Regresar</a>
     </div>
 </body>

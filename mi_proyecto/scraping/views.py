@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Entry, PersonalInfo, Investigacion
-from .forms import EntryForm  # Eliminamos ExtractedDataForm, ya no es necesario
+from .forms import EntryForm
 from django.http import JsonResponse
 import json
 import os
@@ -26,23 +26,18 @@ def ingenieria_sistemas_view(request):
 
     return render(request, 'ingenieria_sistemas.html', {'data': data})
 
-# 📌 Detalle de una entrada
-def detail_page(request, pk):
-    entry = get_object_or_404(Entry, pk=pk)
-    return render(request, 'detail.html', {'entry': entry})
-
 # 📌 Lista de todas las entradas
 def entry_list(request):
     entries = Entry.objects.all()
     return render(request, 'scraping/entry_list.html', {'entries': entries})
 
-# 📌 Vista detallada de un docente
+# 📌 Vista detallada de un docente con tabla de investigaciones mejorada
 def entry_detail(request, pk):
     entry = get_object_or_404(Entry, pk=pk)
     
     # Obtener información personal e investigaciones del docente
     personal_info = PersonalInfo.objects.filter(entry=entry).first()
-    investigaciones = Investigacion.objects.filter(entry=entry)
+    investigaciones = Investigacion.objects.filter(entry=entry).order_by('id')  # Se asegura el orden en que se obtuvieron
 
     return render(request, 'scraping/entry_detail.html', {
         'entry': entry,
@@ -86,21 +81,26 @@ def extracted_data_list(request):
 
     for entry in entries:
         personal_info = PersonalInfo.objects.filter(entry=entry).first()
-        investigaciones = Investigacion.objects.filter(entry=entry)
+        investigaciones = Investigacion.objects.filter(entry=entry).order_by('id')  # Ordenadas por ID
 
         data.append({
             'name': entry.name,
             'href': entry.href,
             'personal_info': {
                 'nombre': personal_info.nombre if personal_info else None,
-                'identificacion': personal_info.identificacion if personal_info else None,
+                'nombre_citaciones': personal_info.nombre_citaciones if personal_info else None,
+                'categoria': personal_info.categoria if personal_info else None,
+                'par_evaluador': personal_info.par_evaluador if personal_info else None,
                 'nacionalidad': personal_info.nacionalidad if personal_info else None,
-                'email': personal_info.email if personal_info else None,
-                'telefono': personal_info.telefono if personal_info else None,
+                'sexo': personal_info.sexo if personal_info else None,
             } if personal_info else None,
             'investigaciones': [
-                {'titulo': inv.titulo, 'tipo': inv.tipo, 'fecha': inv.fecha, 'institucion': inv.institucion}
-                for inv in investigaciones
+                {
+                    'titulo': inv.titulo,
+                    'tipo': inv.tipo,
+                    'fecha': inv.fecha,
+                    'institucion': inv.institucion
+                } for inv in investigaciones
             ]
         })
 

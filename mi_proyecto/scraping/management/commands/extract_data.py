@@ -25,17 +25,17 @@ class Command(BaseCommand):
 
         for nombre, perfil_url in docentes:
             self.stdout.write(f"\n🔎 Procesando: {nombre}")
-            entry = Entry.objects.create(name=nombre, href=perfil_url)
+            entry, _ = Entry.objects.get_or_create(name=nombre, href=perfil_url)
 
             # 🔹 Extraer y almacenar información personal del docente
             info_personal = self.obtener_info_personal(perfil_url, entry)
             if info_personal:
-                PersonalInfo.objects.create(entry=entry, **info_personal)
+                PersonalInfo.objects.update_or_create(entry=entry, defaults=info_personal)
 
             # 🔹 Extraer y almacenar investigaciones
             investigaciones = self.obtener_investigaciones(perfil_url, entry)
             for inv in investigaciones:
-                Investigacion.objects.create(entry=entry, **inv)
+                Investigacion.objects.update_or_create(entry=entry, titulo=inv["titulo"], defaults=inv)
 
         self.stdout.write("\n✅ Extracción y almacenamiento completados exitosamente.")
 
@@ -92,7 +92,6 @@ class Command(BaseCommand):
             "sexo": "",
         }
 
-        # 🔹 Buscar información dentro de todas las tablas
         for table in tables:
             rows = table.find_all("tr")
             for row in rows:
@@ -112,7 +111,6 @@ class Command(BaseCommand):
                     elif "sexo" in clave:
                         info_personal["sexo"] = valor
 
-        # 🔹 Eliminar datos no válidos en "Categoría"
         if "Tipo de proyecto" in info_personal["categoria"]:
             info_personal["categoria"] = ""
 
@@ -136,11 +134,19 @@ class Command(BaseCommand):
         for row in tabla_investigaciones.find_all("tr")[1:]:
             columns = row.find_all("td")
             if len(columns) >= 4:
+                titulo = columns[0].get_text(strip=True)
+                tipo = columns[1].get_text(strip=True)
+                fecha = columns[2].get_text(strip=True)
+                institucion = columns[3].get_text(strip=True)
+
+                if "Nombre del evento" not in titulo:
+                    continue  # Evita registros incorrectos
+
                 inv = {
-                    "titulo": columns[0].get_text(strip=True),
-                    "tipo": columns[1].get_text(strip=True),
-                    "fecha": columns[2].get_text(strip=True),
-                    "institucion": columns[3].get_text(strip=True),
+                    "titulo": titulo,
+                    "tipo": tipo,
+                    "fecha": fecha,
+                    "institucion": institucion,
                 }
                 investigaciones.append(inv)
 
