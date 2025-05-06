@@ -1,0 +1,15 @@
+{% if entries %}
+<ul class="list-group">
+    {% for entry in entries %}
+    <li class="list-group-item d-flex justify-content-between align-items-center">
+        <a href="{% url 'entry_detail' entry.pk %}" class="font-weight-bold">{{ entry.name }}</a>
+        <div>
+            <a href="{% url 'entry_edit' entry.pk %}" class="btn btn-sm btn-warning">Edit</a>
+            <a href="{% url 'entry_delete' entry.pk %}" class="btn btn-sm btn-danger">Delete</a>
+        </div>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<p class="text-center text-muted">No se encontraron resultados.</p>
+{% endif %}

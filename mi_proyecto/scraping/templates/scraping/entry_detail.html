@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ entry.name }}</title>
-    
+
     <!-- Bootstrap CSS -->
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
         .data-section {
-            margin-bottom: 20px;
+            margin-bottom: 30px;
         }
         .table-custom {
             width: 100%;
@@ -27,63 +27,64 @@
     </style>
 </head>
 <body>
-    <div class="container mt-5">
-        <h1 class="mb-4 text-primary">{{ entry.id }}.- {{ entry.name }}</h1>
+<div class="container mt-5">
+    <h1 class="mb-4 text-primary">{{ entry.id }}.- {{ entry.name }}</h1>
 
-        <p class="mb-4">
-            URL: <a href="{{ entry.href }}" class="text-info" target="_blank">{{ entry.href }}</a>
-        </p>
+    <p class="mb-4">
+        URL: <a href="{{ entry.href }}" class="text-info" target="_blank">{{ entry.href }}</a>
+    </p>
 
-        {% if personal_info %}
-        <h2 class="mb-4 text-secondary">Información Personal</h2>
+    {% if personal_info %}
+    <div class="data-section">
+        <h2 class="mb-3 text-secondary">Información Personal</h2>
         <table class="table-custom">
             <tr><th>Nombre</th><td>{{ personal_info.nombre }}</td></tr>
             <tr><th>Nombre en Citaciones</th><td>{{ personal_info.nombre_citaciones|default:"No disponible" }}</td></tr>
             <tr><th>Categoría</th><td>{{ personal_info.categoria|default:"No disponible" }}</td></tr>
-            <tr><th>Par Evaluador</th><td>{% if personal_info.par_evaluador %} Sí {% else %} No {% endif %}</td></tr>
+            <tr><th>Par Evaluador</th><td>{% if personal_info.par_evaluador %}Sí{% else %}No{% endif %}</td></tr>
             <tr><th>Nacionalidad</th><td>{{ personal_info.nacionalidad }}</td></tr>
             <tr><th>Sexo</th><td>{{ personal_info.sexo|default:"No disponible" }}</td></tr>
         </table>
-        {% else %}
-        <p>No se encontró información personal.</p>
-        {% endif %}
+    </div>
+    {% endif %}
 
-        {% if formacion %}
-        <h2 class="mb-4 text-secondary">Formación Académica</h2>
+    {% if formacion %}
+    <div class="data-section">
+        <h2 class="mb-3 text-secondary">Formación Académica</h2>
         <table class="table-custom">
             <tr><th>Nivel</th><td>{{ formacion.nivel|default:"No disponible" }}</td></tr>
             <tr><th>Institución</th><td>{{ formacion.institucion|default:"No disponible" }}</td></tr>
         </table>
-        {% endif %}
+    </div>
+    {% endif %}
 
-        {% if experiencia %}
-        <h2 class="mb-4 text-secondary">Experiencia Profesional</h2>
+    {% if experiencia %}
+    <div class="data-section">
+        <h2 class="mb-3 text-secondary">Experiencia Profesional</h2>
         <table class="table-custom">
             <tr><th>Institución</th><td>{{ experiencia.institucion|default:"No disponible" }}</td></tr>
             <tr><th>Cargo</th><td>{{ experiencia.cargo|default:"No disponible" }}</td></tr>
             <tr><th>Desde</th><td>{{ experiencia.desde|default:"Desconocido" }}</td></tr>
             <tr><th>Hasta</th><td>{{ experiencia.hasta|default:"Actual" }}</td></tr>
         </table>
-        {% endif %}
+    </div>
+    {% endif %}
 
-        <h2 class="mb-4 text-secondary">Investigaciones</h2>
-        {% if investigaciones %}
+    <div class="data-section">
+        <h2 class="mb-3 text-secondary">Investigaciones (Secciones)</h2>
+        {% if investigaciones and investigaciones.datos %}
         <table class="table-custom">
             <thead>
                 <tr>
-                    <th>Título</th>
-                    <th>Tipo</th>
-                    <th>Fecha</th>
-                    <th>Institución</th>
+                    <th>Sección</th>
+                    <th>Total de ítems</th>
                 </tr>
             </thead>
             <tbody>
-                {% for inv in investigaciones %}
+                {% for seccion, cantidad in investigaciones.datos.items %}
                 <tr>
-                    <td>{{ inv.titulo }}</td>
-                    <td>{{ inv.tipo|default:"No especificado" }}</td>
-                    <td>{{ inv.fecha|default:"No especificada" }}</td>
-                    <td>{{ inv.institucion|default:"No especificada" }}</td>
+                    <td>{{ seccion }}</td>
+                    <td>{{ cantidad }}</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -91,8 +92,9 @@
         {% else %}
         <p>No hay investigaciones registradas.</p>
         {% endif %}
-
-        <a href="{% url 'entry_list' %}" class="btn btn-outline-secondary">Regresar</a>
     </div>
+
+    <a href="{% url 'entry_list' %}" class="btn btn-outline-secondary">Regresar</a>
+</div>
 </body>
 </html>

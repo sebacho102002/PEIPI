@@ -1,24 +1,46 @@
-{% extends "base.html" %} <!-- Asegúrate de que esto esté correcto -->
+{% extends "base.html" %}
 
-{% block title %}Lista de Docentes{% endblock %} <!-- Título específico para la página -->
+{% block title %}Lista de Docentes{% endblock %}
 
 {% block content %}
 <div class="container mt-5">
     <h1 class="text-center mb-4">Docentes</h1>
-    <div class="text-right mb-3">
-        <a href="{% url 'entry_new' %}" class="btn btn-primary">Añadir nuevo Docente</a>
+
+    <!-- 🔍 Búsqueda interactiva -->
+    <div class="form-group">
+        <input type="text" id="search-input" class="form-control" placeholder="Buscar docente...">
     </div>
 
-    <ul class="list-group">
-        {% for entry in entries %}
-        <li class="list-group-item d-flex justify-content-between align-items-center">
-            <a href="{% url 'entry_detail' entry.pk %}" class="font-weight-bold">{{ entry.name }}</a>
-            <div>
-                <a href="{% url 'entry_edit' entry.pk %}" class="btn btn-sm btn-warning">Edit</a>
-                <a href="{% url 'entry_delete' entry.pk %}" class="btn btn-sm btn-danger">Delete</a>
-            </div>
-        </li>
-        {% endfor %}
-    </ul>
+    <div class="d-flex justify-content-between mb-3">
+        <a href="{% url 'entry_new' %}" class="btn btn-primary">Añadir nuevo Docente</a>
+        <a href="{% url 'exportar_datos' %}" class="btn btn-success">Exportar datos</a>
+    </div>
+
+    <!-- 📄 Aquí se cargará la lista filtrada -->
+    <div id="results">
+        {% include "scraping/_entry_list_items.html" %}
+    </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const input = document.getElementById("search-input");
+    const resultsContainer = document.getElementById("results");
+
+    input.addEventListener("input", function () {
+        const query = input.value;
+        fetch(`?q=${query}`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            resultsContainer.innerHTML = data.html;
+        });
+    });
+});
+</script>
 {% endblock %}

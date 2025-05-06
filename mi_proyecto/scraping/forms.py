@@ -9,9 +9,17 @@ class EntryForm(forms.ModelForm):
 class PersonalInfoForm(forms.ModelForm):
     class Meta:
         model = PersonalInfo
-        fields = ['entry', 'nombre', 'nombre_citaciones', 'categoria', 'par_evaluador', 'nacionalidad', 'sexo']
+        fields = [
+            'entry',
+            'nombre',
+            'nombre_citaciones',
+            'categoria',
+            'par_evaluador',
+            'nacionalidad',
+            'sexo'
+        ]
 
 class InvestigacionForm(forms.ModelForm):
     class Meta:
         model = Investigacion
-        fields = ['entry', 'titulo', 'tipo', 'fecha', 'institucion']
+        fields = ['entry', 'datos']

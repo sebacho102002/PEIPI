@@ -17,6 +17,7 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         self.stdout.write("🟢 Iniciando extracción de datos...\n")
 
+        # Limpieza completa
         Investigacion.objects.all().delete()
         FormacionAcademica.objects.all().delete()
         ExperienciaProfesional.objects.all().delete()
@@ -47,17 +48,9 @@ class Command(BaseCommand):
                 self.stdout.write("📘 Formación académica registrada.")
 
             if self.obtener_experiencia_y_cargo(soup, entry):
-                self.stdout.write("🧳 Experiencia profesional registrada.")
+                self.stdout.write("🧳 Experiencia profesional registrada.")
 
-            investigaciones = self.obtener_investigaciones(soup, entry)
-            if investigaciones:
-                self.stdout.write(f"🔬 {len(investigaciones)} investigaciones registradas.")
-                for inv in investigaciones:
-                    Investigacion.objects.update_or_create(
-                        entry=entry,
-                        titulo=inv["titulo"],
-                        defaults=inv
-                    )
+            self.obtener_investigaciones_agrupadas(soup, entry)
 
         self.stdout.write("\n✅ Extracción y almacenamiento completados exitosamente.")
 
@@ -170,46 +163,27 @@ class Command(BaseCommand):
                                     return True
         return False
 
-    def obtener_investigaciones(self, soup, entry):
-        investigaciones = []
-        secciones_relevantes = [
-            "Proyectos",
-            "Informes de investigaci",
-            "Artículos",
-            "Libros"
-        ]
+    def obtener_investigaciones_agrupadas(self, soup, entry):
+        procesadas = {"Formación Académica", "Experiencia profesional"}
+        datos_investigacion = {}
 
         for table in soup.find_all("table"):
             h3 = table.find("h3")
             if not h3:
                 continue
 
-            titulo_seccion = h3.get_text(strip=True)
-            if any(palabra in titulo_seccion for palabra in secciones_relevantes):
-                for row in table.find_all("tr")[1:]:  # Omitir encabezado
-                    cols = row.find_all("td")
-                    if len(cols) >= 2:
-                        contenido = cols[1].get_text(separator="\n", strip=True)
-                        lineas = contenido.splitlines()
-                        if not lineas:
-                            continue
+            titulo = h3.get_text(strip=True)
+            if titulo in procesadas or titulo in datos_investigacion:
+                continue
 
-                        titulo = lineas[0]
-                        tipo = titulo_seccion
-                        institucion = ""
-                        fecha = ""
+            filas = table.find_all("tr")[1:]
+            filas_utiles = [f for f in filas if f.find_all("td")]
 
-                        for linea in lineas:
-                            if "Institución" in linea:
-                                institucion = linea.split(":")[-1].strip()
-                            if "Fecha de inicio" in linea:
-                                fecha = linea.split(":")[-1].strip()
+            if filas_utiles:
+                datos_investigacion[titulo] = len(filas_utiles)
 
-                        investigaciones.append({
-                            "titulo": titulo,
-                            "tipo": tipo,
-                            "fecha": fecha,
-                            "institucion": institucion
-                        })
-
-        return investigaciones
+        if datos_investigacion:
+            Investigacion.objects.update_or_create(
+                entry=entry,
+                defaults={'datos': datos_investigacion}
+            )

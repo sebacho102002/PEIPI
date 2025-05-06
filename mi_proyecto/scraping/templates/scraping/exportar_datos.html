@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Exportar Datos{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4 text-primary text-center">Exportar Datos de Docentes</h2>
+
+    <form method="POST" class="mb-4">
+        {% csrf_token %}
+        <div class="form-group">
+            <label><strong>Selecciona los datos a incluir:</strong></label><br>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" name="incluir_personal" id="personal" checked>
+                <label class="form-check-label" for="personal">Información Personal</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" name="incluir_formacion" id="formacion" checked>
+                <label class="form-check-label" for="formacion">Formación Académica</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" name="incluir_experiencia" id="experiencia" checked>
+                <label class="form-check-label" for="experiencia">Experiencia Profesional</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" name="incluir_investigaciones" id="investigaciones" checked>
+                <label class="form-check-label" for="investigaciones">Investigaciones</label>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-success">Exportar a Excel</button>
+    </form>
+
+    <hr>
+
+    <h4 class="text-secondary">Scraping de Nuevos Datos</h4>
+    <p>Presiona el botón para ejecutar el scraping directamente desde esta vista.</p>
+
+    <button id="btnScraping" class="btn btn-primary mb-3">Ejecutar Scraping</button>
+
+    <div id="progressContainer" class="progress mb-3" style="height: 25px; display: none;">
+        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
+             role="progressbar" style="width: 0%;">
+            Ejecutando...
+        </div>
+    </div>
+    <p id="scrapingStatus" class="text-info"></p>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+<script>
+    document.getElementById('btnScraping').addEventListener('click', function () {
+        const btn = this;
+        const progressBar = document.getElementById('progressBar');
+        const progressContainer = document.getElementById('progressContainer');
+        const statusText = document.getElementById('scrapingStatus');
+
+        btn.disabled = true;
+        progressContainer.style.display = 'block';
+        progressBar.style.width = '25%';
+        progressBar.innerText = 'Ejecutando...';
+        statusText.innerText = '';
+
+        fetch("{% url 'ejecutar_scraping' %}")
+            .then(response => response.json())
+            .then(data => {
+                progressBar.style.width = '100%';
+                progressBar.innerText = 'Completado';
+                statusText.innerText = data.mensaje || 'Scraping completado correctamente.';
+                btn.disabled = false;
+            })
+            .catch(error => {
+                progressBar.style.width = '100%';
+                progressBar.classList.remove('bg-success');
+                progressBar.classList.add('bg-danger');
+                progressBar.innerText = 'Error';
+                statusText.innerText = 'Ocurrió un error: ' + error;
+                btn.disabled = false;
+            });
+    });
+</script>
+{% endblock %}
