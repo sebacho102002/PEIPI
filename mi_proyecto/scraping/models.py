@@ -37,3 +37,27 @@ class Investigacion(models.Model):
 
     def __str__(self):
         return f"{self.entry.name} - {self.titulo}"
+
+class FormacionAcademica(models.Model):
+    """
+    Modelo que almacena la formación académica principal de un docente.
+    """
+    entry = models.OneToOneField(Entry, on_delete=models.CASCADE, related_name="formacion_academica")
+    nivel = models.CharField(max_length=255)
+    institucion = models.CharField(max_length=255)
+
+    def __str__(self):
+        return f"{self.entry.name} - {self.nivel}"
+
+class ExperienciaProfesional(models.Model):
+    """
+    Modelo que almacena la experiencia profesional principal de un docente.
+    """
+    entry = models.OneToOneField(Entry, on_delete=models.CASCADE, related_name="experiencia_profesional")
+    institucion = models.CharField(max_length=255)
+    cargo = models.CharField(max_length=255)
+    desde = models.CharField(max_length=100, blank=True, null=True)
+    hasta = models.CharField(max_length=100, blank=True, null=True)
+
+    def __str__(self):
+        return f"{self.entry.name} - {self.cargo} en {self.institucion}"

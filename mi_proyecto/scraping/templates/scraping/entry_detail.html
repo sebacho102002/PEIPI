@@ -48,6 +48,24 @@
         <p>No se encontró información personal.</p>
         {% endif %}
 
+        {% if formacion %}
+        <h2 class="mb-4 text-secondary">Formación Académica</h2>
+        <table class="table-custom">
+            <tr><th>Nivel</th><td>{{ formacion.nivel|default:"No disponible" }}</td></tr>
+            <tr><th>Institución</th><td>{{ formacion.institucion|default:"No disponible" }}</td></tr>
+        </table>
+        {% endif %}
+
+        {% if experiencia %}
+        <h2 class="mb-4 text-secondary">Experiencia Profesional</h2>
+        <table class="table-custom">
+            <tr><th>Institución</th><td>{{ experiencia.institucion|default:"No disponible" }}</td></tr>
+            <tr><th>Cargo</th><td>{{ experiencia.cargo|default:"No disponible" }}</td></tr>
+            <tr><th>Desde</th><td>{{ experiencia.desde|default:"Desconocido" }}</td></tr>
+            <tr><th>Hasta</th><td>{{ experiencia.hasta|default:"Actual" }}</td></tr>
+        </table>
+        {% endif %}
+
         <h2 class="mb-4 text-secondary">Investigaciones</h2>
         {% if investigaciones %}
         <table class="table-custom">

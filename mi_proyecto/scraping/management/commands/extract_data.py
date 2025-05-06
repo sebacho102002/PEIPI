@@ -1,88 +1,91 @@
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString
 from django.core.management.base import BaseCommand
-from scraping.models import Entry, PersonalInfo, Investigacion
+from scraping.models import (
+    Entry,
+    PersonalInfo,
+    Investigacion,
+    FormacionAcademica,
+    ExperienciaProfesional,
+)
 
 GRUPLAC_URL = "https://scienti.minciencias.gov.co/gruplac/jsp/visualiza/visualizagr.jsp?nro=00000000003118"
 
 class Command(BaseCommand):
-    help = 'Extrae datos de Gruplac y los almacena en la base de datos'
+    help = 'Extrae datos de Gruplac y CvLAC y los almacena en la base de datos'
 
     def handle(self, *args, **kwargs):
         self.stdout.write("🟢 Iniciando extracción de datos...\n")
 
-        # 🔹 Limpiar la base de datos antes de insertar nuevos datos
-        Entry.objects.all().delete()
-        PersonalInfo.objects.all().delete()
         Investigacion.objects.all().delete()
+        FormacionAcademica.objects.all().delete()
+        ExperienciaProfesional.objects.all().delete()
+        PersonalInfo.objects.all().delete()
+        Entry.objects.all().delete()
 
-        # 🔹 Obtener lista de docentes
         docentes = self.obtener_docentes()
-
         if not docentes:
-            self.stdout.write("⚠️ No se encontraron docentes en la tabla 4.")
+            self.stdout.write("⚠️ No se encontraron docentes.")
             return
 
         for nombre, perfil_url in docentes:
             self.stdout.write(f"\n🔎 Procesando: {nombre}")
             entry, _ = Entry.objects.get_or_create(name=nombre, href=perfil_url)
 
-            # 🔹 Extraer y almacenar información personal del docente
-            info_personal = self.obtener_info_personal(perfil_url, entry)
+            response = requests.get(perfil_url)
+            if response.status_code != 200:
+                self.stdout.write(f"⚠️ No se pudo acceder al perfil de {entry.name}.")
+                continue
+
+            soup = BeautifulSoup(response.content, "html.parser")
+
+            info_personal = self.obtener_info_personal(soup, entry)
             if info_personal:
                 PersonalInfo.objects.update_or_create(entry=entry, defaults=info_personal)
 
-            # 🔹 Extraer y almacenar investigaciones
-            investigaciones = self.obtener_investigaciones(perfil_url, entry)
-            for inv in investigaciones:
-                Investigacion.objects.update_or_create(entry=entry, titulo=inv["titulo"], defaults=inv)
+            if self.obtener_formacion_academica(soup, entry):
+                self.stdout.write("📘 Formación académica registrada.")
+
+            if self.obtener_experiencia_y_cargo(soup, entry):
+                self.stdout.write("🧳 Experiencia profesional registrada.")
+
+            investigaciones = self.obtener_investigaciones(soup, entry)
+            if investigaciones:
+                self.stdout.write(f"🔬 {len(investigaciones)} investigaciones registradas.")
+                for inv in investigaciones:
+                    Investigacion.objects.update_or_create(
+                        entry=entry,
+                        titulo=inv["titulo"],
+                        defaults=inv
+                    )
 
         self.stdout.write("\n✅ Extracción y almacenamiento completados exitosamente.")
 
     def obtener_docentes(self):
-        """Extrae la lista de docentes del grupo y sus enlaces de perfil."""
         response = requests.get(GRUPLAC_URL)
         if response.status_code != 200:
-            self.stdout.write(f"🔴 Error al acceder a la URL del grupo: {response.status_code}")
+            self.stdout.write(f"🔴 Error al acceder a GRUPLAC: {response.status_code}")
             return []
 
         soup = BeautifulSoup(response.content, "html.parser")
         tables = soup.find_all("table")
-
         if len(tables) < 5:
-            self.stdout.write("⚠️ No hay suficientes tablas en la página. Verifica la URL.")
+            self.stdout.write("⚠️ No hay suficientes tablas.")
             return []
 
-        docentes_tabla = tables[4]
         docentes = []
-
-        for row in docentes_tabla.find_all("tr")[1:]:
-            columns = row.find_all("td")
-            if len(columns) > 0:
-                name = columns[0].get_text(strip=True)
-                link = columns[0].find("a")
+        for row in tables[4].find_all("tr")[1:]:
+            cols = row.find_all("td")
+            if cols:
+                name = cols[0].get_text(strip=True)
+                link = cols[0].find("a")
                 href = link.get("href") if link else None
-
                 if href:
                     full_url = href if href.startswith("http") else f"https://scienti.minciencias.gov.co{href}"
                     docentes.append((name, full_url))
-
         return docentes
 
-    def obtener_info_personal(self, url, entry):
-        """Extrae información personal del docente desde su perfil en CvLAC."""
-        response = requests.get(url)
-        if response.status_code != 200:
-            self.stdout.write(f"⚠️ No se pudo acceder al perfil de {entry.name}.")
-            return None
-
-        soup = BeautifulSoup(response.content, "html.parser")
-        tables = soup.find_all("table")
-
-        if not tables:
-            self.stdout.write(f"⚠️ No hay tablas en el perfil de {entry.name}.")
-            return None
-
+    def obtener_info_personal(self, soup, entry):
         info_personal = {
             "nombre": entry.name,
             "nombre_citaciones": "",
@@ -92,13 +95,12 @@ class Command(BaseCommand):
             "sexo": "",
         }
 
-        for table in tables:
-            rows = table.find_all("tr")
-            for row in rows:
-                columns = row.find_all("td")
-                if len(columns) >= 2:
-                    clave = columns[0].get_text(strip=True).lower()
-                    valor = columns[1].get_text(strip=True)
+        for table in soup.find_all("table"):
+            for row in table.find_all("tr"):
+                cols = row.find_all("td")
+                if len(cols) >= 2:
+                    clave = cols[0].get_text(strip=True).lower()
+                    valor = cols[1].get_text(strip=True)
 
                     if "categoría" in clave and not info_personal["categoria"]:
                         info_personal["categoria"] = valor
@@ -111,43 +113,103 @@ class Command(BaseCommand):
                     elif "sexo" in clave:
                         info_personal["sexo"] = valor
 
-        if "Tipo de proyecto" in info_personal["categoria"]:
-            info_personal["categoria"] = ""
-
         return info_personal
 
-    def obtener_investigaciones(self, url, entry):
-        """Extrae la lista de investigaciones del docente."""
-        response = requests.get(url)
-        if response.status_code != 200:
-            return []
+    def obtener_formacion_academica(self, soup, entry):
+        for table in soup.find_all("table"):
+            h3 = table.find("h3")
+            if h3 and "Formación Académica" in h3.get_text(strip=True):
+                rows = table.find_all("tr")
+                if len(rows) > 1:
+                    cols = rows[1].find_all("td")
+                    if len(cols) > 1:
+                        texto = cols[1].get_text(separator="\n", strip=True)
+                        lineas = texto.splitlines()
+                        if len(lineas) >= 2:
+                            nivel, institucion = lineas[0], lineas[1]
+                            FormacionAcademica.objects.update_or_create(
+                                entry=entry,
+                                defaults={"nivel": nivel, "institucion": institucion}
+                            )
+                            return True
+        return False
 
-        soup = BeautifulSoup(response.content, "html.parser")
-        tables = soup.find_all("table")
+    def obtener_experiencia_y_cargo(self, soup, entry):
+        for table in soup.find_all("table"):
+            h3 = table.find("h3")
+            if h3 and "Experiencia profesional" in h3.get_text(strip=True):
+                for row in table.find_all("tr")[1:]:
+                    cols = row.find_all("td")
+                    if len(cols) < 2:
+                        continue
+                    contenido = cols[1]
+                    if "Actividades de administración" in contenido.get_text():
+                        institucion_tag = contenido.find("b")
+                        institucion = institucion_tag.get_text(strip=True) if institucion_tag else "Desconocida"
 
-        if len(tables) < 5:
-            return []
+                        for i_tag in contenido.find_all("i"):
+                            if "Cargo:" in i_tag.get_text():
+                                next_text = i_tag.next_sibling
+                                while next_text and (not isinstance(next_text, NavigableString) or not next_text.strip()):
+                                    next_text = next_text.next_sibling
+                                if next_text:
+                                    bloques = next_text.strip().splitlines()
+                                    bloques = [b.strip() for b in bloques if b.strip()]
+                                    cargo = bloques[0] if len(bloques) > 0 else "Desconocido"
+                                    desde = bloques[1] if len(bloques) > 1 else ""
+                                    hasta = bloques[2] if len(bloques) > 2 else ""
+                                    ExperienciaProfesional.objects.update_or_create(
+                                        entry=entry,
+                                        defaults={
+                                            "institucion": institucion,
+                                            "cargo": cargo,
+                                            "desde": desde,
+                                            "hasta": hasta
+                                        }
+                                    )
+                                    return True
+        return False
 
+    def obtener_investigaciones(self, soup, entry):
         investigaciones = []
-        tabla_investigaciones = tables[4]
+        secciones_relevantes = [
+            "Proyectos",
+            "Informes de investigaci",
+            "Artículos",
+            "Libros"
+        ]
 
-        for row in tabla_investigaciones.find_all("tr")[1:]:
-            columns = row.find_all("td")
-            if len(columns) >= 4:
-                titulo = columns[0].get_text(strip=True)
-                tipo = columns[1].get_text(strip=True)
-                fecha = columns[2].get_text(strip=True)
-                institucion = columns[3].get_text(strip=True)
+        for table in soup.find_all("table"):
+            h3 = table.find("h3")
+            if not h3:
+                continue
 
-                if "Nombre del evento" not in titulo:
-                    continue  # Evita registros incorrectos
+            titulo_seccion = h3.get_text(strip=True)
+            if any(palabra in titulo_seccion for palabra in secciones_relevantes):
+                for row in table.find_all("tr")[1:]:  # Omitir encabezado
+                    cols = row.find_all("td")
+                    if len(cols) >= 2:
+                        contenido = cols[1].get_text(separator="\n", strip=True)
+                        lineas = contenido.splitlines()
+                        if not lineas:
+                            continue
 
-                inv = {
-                    "titulo": titulo,
-                    "tipo": tipo,
-                    "fecha": fecha,
-                    "institucion": institucion,
-                }
-                investigaciones.append(inv)
+                        titulo = lineas[0]
+                        tipo = titulo_seccion
+                        institucion = ""
+                        fecha = ""
+
+                        for linea in lineas:
+                            if "Institución" in linea:
+                                institucion = linea.split(":")[-1].strip()
+                            if "Fecha de inicio" in linea:
+                                fecha = linea.split(":")[-1].strip()
+
+                        investigaciones.append({
+                            "titulo": titulo,
+                            "tipo": tipo,
+                            "fecha": fecha,
+                            "institucion": institucion
+                        })
 
         return investigaciones

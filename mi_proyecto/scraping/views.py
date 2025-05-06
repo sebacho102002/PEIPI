@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Entry, PersonalInfo, Investigacion
+from .models import Entry, PersonalInfo, Investigacion, FormacionAcademica, ExperienciaProfesional
 from .forms import EntryForm
 from django.http import JsonResponse
 import json
@@ -22,7 +22,7 @@ def ingenieria_sistemas_view(request):
         with open(json_file_path, 'r', encoding='utf-8') as json_file:
             data = json.load(json_file)
     except FileNotFoundError:
-        data = []  # Si no hay datos, se devuelve una lista vacía
+        data = []
 
     return render(request, 'ingenieria_sistemas.html', {'data': data})
 
@@ -31,21 +31,24 @@ def entry_list(request):
     entries = Entry.objects.all()
     return render(request, 'scraping/entry_list.html', {'entries': entries})
 
-# 📌 Vista detallada de un docente con tabla de investigaciones mejorada
+# 📌 Vista detallada de un docente
 def entry_detail(request, pk):
     entry = get_object_or_404(Entry, pk=pk)
-    
-    # Obtener información personal e investigaciones del docente
+
     personal_info = PersonalInfo.objects.filter(entry=entry).first()
-    investigaciones = Investigacion.objects.filter(entry=entry).order_by('id')  # Se asegura el orden en que se obtuvieron
+    investigaciones = Investigacion.objects.filter(entry=entry).order_by('id')
+    formacion = FormacionAcademica.objects.filter(entry=entry).first()
+    experiencia = ExperienciaProfesional.objects.filter(entry=entry).first()
 
     return render(request, 'scraping/entry_detail.html', {
         'entry': entry,
         'personal_info': personal_info,
-        'investigaciones': investigaciones
+        'investigaciones': investigaciones,
+        'formacion': formacion,
+        'experiencia': experiencia
     })
 
-# 📌 Crear una nueva entrada
+# 📌 Crear nueva entrada
 def entry_new(request):
     if request.method == "POST":
         form = EntryForm(request.POST)
@@ -56,7 +59,7 @@ def entry_new(request):
         form = EntryForm()
     return render(request, 'scraping/entry_edit.html', {'form': form})
 
-# 📌 Editar una entrada
+# 📌 Editar entrada existente
 def entry_edit(request, pk):
     entry = get_object_or_404(Entry, pk=pk)
     if request.method == "POST":
@@ -74,14 +77,14 @@ def entry_delete(request, pk):
     entry.delete()
     return redirect('entry_list')
 
-# 📌 Generar JSON con los datos de los docentes
+# 📌 Exportar JSON de los docentes
 def extracted_data_list(request):
     entries = Entry.objects.all()
     data = []
 
     for entry in entries:
         personal_info = PersonalInfo.objects.filter(entry=entry).first()
-        investigaciones = Investigacion.objects.filter(entry=entry).order_by('id')  # Ordenadas por ID
+        investigaciones = Investigacion.objects.filter(entry=entry).order_by('id')
 
         data.append({
             'name': entry.name,
