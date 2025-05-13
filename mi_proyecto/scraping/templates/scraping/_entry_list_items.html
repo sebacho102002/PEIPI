@@ -1,15 +1,331 @@
 {% if entries %}
-<ul class="list-group">
+<div class="docentes-list">
     {% for entry in entries %}
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-        <a href="{% url 'entry_detail' entry.pk %}" class="font-weight-bold">{{ entry.name }}</a>
-        <div>
-            <a href="{% url 'entry_edit' entry.pk %}" class="btn btn-sm btn-warning">Edit</a>
-            <a href="{% url 'entry_delete' entry.pk %}" class="btn btn-sm btn-danger">Delete</a>
+    <div class="docente-item">
+        <div class="docente-info">
+            <div class="docente-avatar">
+                {% if entry.profile_image %}
+                <img src="{{ entry.profile_image.url }}" alt="{{ entry.name }}">
+                {% else %}
+                <div class="avatar-placeholder">
+                    <i class="fas fa-user"></i>
+                </div>
+                {% endif %}
+            </div>
+            <div class="docente-details">
+                <h3 class="docente-name">{{ entry.name }}</h3>
+                <div class="docente-metadata">
+                    {% if entry.faculty %}
+                    <span class="metadata-item">
+                        <i class="fas fa-university"></i> {{ entry.faculty }}
+                    </span>
+                    {% endif %}
+                    
+                    {% if entry.program %}
+                    <span class="metadata-item">
+                        <i class="fas fa-graduation-cap"></i> {{ entry.program }}
+                    </span>
+                    {% endif %}
+                    
+                    {% if entry.email %}
+                    <span class="metadata-item">
+                        <i class="fas fa-envelope"></i> {{ entry.email }}
+                    </span>
+                    {% endif %}
+                </div>
+                
+                {% if entry.publications_count or entry.projects_count %}
+                <div class="docente-stats">
+                    {% if entry.publications_count %}
+                    <span class="stat-item">
+                        <i class="fas fa-book"></i> {{ entry.publications_count }} publicaciones
+                    </span>
+                    {% endif %}
+                    
+                    {% if entry.projects_count %}
+                    <span class="stat-item">
+                        <i class="fas fa-project-diagram"></i> {{ entry.projects_count }} proyectos
+                    </span>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
         </div>
-    </li>
+        
+        <div class="docente-actions">
+            <a href="{% url 'entry_detail' entry.pk %}" class="action-link view-link" title="Ver detalles">
+                <i class="fas fa-eye"></i>
+                <span class="action-text">Ver</span>
+            </a>
+            <a href="{% url 'entry_edit' entry.pk %}" class="action-link edit-link" title="Editar docente">
+                <i class="fas fa-edit"></i>
+                <span class="action-text">Editar</span>
+            </a>
+            <a href="{% url 'entry_delete' entry.pk %}" class="action-link delete-link" title="Eliminar docente">
+                <i class="fas fa-trash-alt"></i>
+                <span class="action-text">Eliminar</span>
+            </a>
+        </div>
+    </div>
     {% endfor %}
-</ul>
+</div>
+
+<style>
+    /* Estilos para la lista de docentes */
+    .docentes-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        padding: 20px;
+    }
+    
+    .docente-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        border-left: 4px solid var(--primary-color);
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .docente-item:hover {
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+    
+    .docente-info {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        flex: 1;
+        min-width: 250px;
+    }
+    
+    .docente-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        overflow: hidden;
+        background-color: #f0f0f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    
+    .docente-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #e0e0e0;
+        color: #666;
+    }
+    
+    .avatar-placeholder i {
+        font-size: 24px;
+    }
+    
+    .docente-details {
+        flex: 1;
+    }
+    
+    .docente-name {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin: 0 0 5px 0;
+    }
+    
+    .docente-metadata {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 5px;
+    }
+    
+    .metadata-item {
+        font-size: 14px;
+        color: #666;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .metadata-item i {
+        color: var(--primary-color);
+        font-size: 12px;
+    }
+    
+    .docente-stats {
+        display: flex;
+        gap: 15px;
+        margin-top: 5px;
+    }
+    
+    .stat-item {
+        font-size: 13px;
+        color: #777;
+        background-color: #f5f5f5;
+        padding: 3px 8px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .stat-item i {
+        color: var(--primary-color);
+        font-size: 11px;
+    }
+    
+    .docente-actions {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .action-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    
+    .view-link {
+        background-color: #e3f2fd;
+        color: #1565c0;
+    }
+    
+    .view-link:hover {
+        background-color: #bbdefb;
+        color: #0d47a1;
+    }
+    
+    .edit-link {
+        background-color: #fff8e1;
+        color: #f57f17;
+    }
+    
+    .edit-link:hover {
+        background-color: #ffecb3;
+        color: #e65100;
+    }
+    
+    .delete-link {
+        background-color: #ffebee;
+        color: #c62828;
+    }
+    
+    .delete-link:hover {
+        background-color: #ffcdd2;
+        color: #b71c1c;
+    }
+    
+    /* Animación de entrada */
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .docente-item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .docente-actions {
+            width: 100%;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+        
+        .action-text {
+            display: none;
+        }
+        
+        .action-link {
+            padding: 8px;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .docente-info {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        
+        .docente-avatar {
+            width: 50px;
+            height: 50px;
+        }
+        
+        .docente-actions {
+            justify-content: space-between;
+        }
+    }
+</style>
+
 {% else %}
-<p class="text-center text-muted">No se encontraron resultados.</p>
+<div class="empty-state">
+    <div class="empty-icon">
+        <i class="fas fa-user-graduate"></i>
+    </div>
+    <h3 class="empty-title">No se encontraron docentes</h3>
+    <p class="empty-description">No hay docentes que coincidan con tu búsqueda</p>
+</div>
+
+<style>
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 50px 20px;
+        text-align: center;
+    }
+    
+    .empty-icon {
+        font-size: 48px;
+        color: #e0e0e0;
+        margin-bottom: 20px;
+    }
+    
+    .empty-title {
+        font-size: 20px;
+        color: #666;
+        margin-bottom: 10px;
+    }
+    
+    .empty-description {
+        font-size: 16px;
+        color: #999;
+        max-width: 300px;
+    }
+</style>
 {% endif %}

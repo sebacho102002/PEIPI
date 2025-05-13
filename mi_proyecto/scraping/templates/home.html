@@ -1,64 +1,254 @@
 {% extends "base.html" %}
-{% load static %} <!-- Carga la etiqueta static -->
+{% load static %}
+
+{% block title %}PEIPI - Programas de Ingeniería{% endblock %}
 
 {% block content %}
-<main class="container mt-5">
-
-    <!-- Aquí va el resto de tu contenido actual -->
-    <div class="content-container">
-        <h2 class="text-center mb-5">PROGRAMAS DE INGENIERÍA</h2>
-
-        <div class="row">
-            <!-- Primera columna -->
-            <div class="col-md-6 mb-4">
-                <a class="d-block position-relative" href="#">
-                    <img src="{% static 'img/bioingenieria.jpg' %}" class="img-fluid rounded" alt="BIOINGENIERÍA">
-                    <div class="overlay position-absolute w-100 h-100" style="top:0; left:0; background-color: rgba(0, 0, 0, 0.5);"></div>
-                    <span class="text-white position-absolute" style="bottom:10px; left:10px;">BIOINGENIERÍA</span>
-                </a>
+<div class="programs-container">
+    <h1 class="main-title">PROGRAMAS DE INGENIERÍA</h1>
+    
+    <div class="programs-grid" id="programsGrid">
+        <!-- Primera fila -->
+        <div class="program-row">
+            <!-- Bioingeniería -->
+            <div class="program-card">
+                <img src="{% static 'img/bioingenieria.jpg' %}" alt="BIOINGENIERÍA" class="program-image">
+                <div class="program-overlay">
+                    <h2 class="program-title">BIOINGENIERÍA</h2>
+                </div>
+                <a href="#" class="program-link" aria-label="Ver programa de Bioingeniería"></a>
             </div>
 
-            <div class="col-md-6 mb-4">
-                <a class="d-block position-relative" href="#">
-                    <img src="{% static 'img\comercial_.jpg' %}" class="img-fluid rounded" alt="INGENIERÍA COMERCIAL">
-                    <div class="overlay position-absolute w-100 h-100" style="top:0; left:0; background-color: rgba(0, 0, 0, 0.5);"></div>
-                    <span class="text-white position-absolute" style="bottom:20px; left:20px;">INGENIERÍA COMERCIAL</span>
-                </a>
+            <!-- Ingeniería Comercial -->
+            <div class="program-card commercial-card">
+                <img src="{% static 'img/comercial_.jpg' %}" alt="INGENIERÍA COMERCIAL" class="program-image">
+                <div class="program-overlay">
+                    <h2 class="program-title">INGENIERÍA<br>COMERCIAL</h2>
+                </div>
+                <a href="#" class="program-link" aria-label="Ver programa de Ingeniería Comercial"></a>
             </div>
 
-            <div class="col-md-6 mb-4">
-                <a class="d-block position-relative" href="{% url 'ingenieria_sistemas_entries' %}">
-                    <img src="{% static 'img/sistemas.jpg' %}" class="img-fluid rounded" alt="INGENIERÍA DE SISTEMAS">
-                    <div class="overlay position-absolute w-100 h-100" style="top:0; left:0; background-color: rgba(0, 0, 0, 0.5);"></div>
-                    <span class="text-white position-absolute" style="bottom:10px; left:10px;">INGENIERÍA DE SISTEMAS</span>
-                </a>
+            <!-- Ingeniería de Sistemas -->
+            <div class="program-card">
+                <img src="{% static 'img/sistemas.jpg' %}" alt="INGENIERÍA DE SISTEMAS" class="program-image">
+                <div class="program-overlay">
+                    <h2 class="program-title">INGENIERÍA DE<br>SISTEMAS</h2>
+                </div>
+                <a href="{% url 'ingenieria_sistemas_entries' %}" class="program-link" aria-label="Ver programa de Ingeniería de Sistemas"></a>
+            </div>
+        </div>
+
+        <!-- Segunda fila -->
+        <div class="program-row">
+            <!-- Ingeniería Electrónica -->
+            <div class="program-card">
+                <img src="{% static 'img/electronica.jpg' %}" alt="INGENIERÍA ELECTRÓNICA" class="program-image">
+                <div class="program-overlay">
+                    <h2 class="program-title">INGENIERÍA<br>ELECTRÓNICA</h2>
+                </div>
+                <a href="#" class="program-link" aria-label="Ver programa de Ingeniería Electrónica"></a>
             </div>
 
-            <!-- Segunda columna -->
-            <div class="col-md-6 mb-4">
-                <a class="d-block position-relative" href="#">
-                    <img src="{% static 'img/electronica.jpg' %}" class="img-fluid rounded" alt="INGENIERÍA ELECTRÓNICA">
-                    <div class="overlay position-absolute w-100 h-100" style="top:0; left:0; background-color: rgba(0, 0, 0, 0.5);"></div>
-                    <span class="text-white position-absolute" style="bottom:10px; left:10px;">INGENIERÍA ELECTRÓNICA</span>
-                </a>
+            <!-- Ingeniería en Energías -->
+            <div class="program-card">
+                <img src="{% static 'img/energias.jpg' %}" alt="INGENIERÍA EN ENERGÍAS" class="program-image">
+                <div class="program-overlay">
+                    <h2 class="program-title">INGENIERÍA EN<br>ENERGÍAS</h2>
+                </div>
+                <a href="#" class="program-link" aria-label="Ver programa de Ingeniería en Energías"></a>
             </div>
 
-            <div class="col-md-6 mb-4">
-                <a class="d-block position-relative" href="#">
-                    <img src="{% static 'img/energias.jpg' %}" class="img-fluid rounded" alt="INGENIERÍA EN ENERGÍAS">
-                    <div class="overlay position-absolute w-100 h-100" style="top:0; left:0; background-color: rgba(0, 0, 0, 0.5);"></div>
-                    <span class="text-white position-absolute" style="bottom:10px; left:10px;">INGENIERÍA EN ENERGÍAS</span>
-                </a>
-            </div>
-
-            <div class="col-md-6 mb-4">
-                <a class="d-block position-relative" href="#">
-                    <img src="{% static 'img/industrial.jpg' %}" class="img-fluid rounded" alt="INGENIERÍA INDUSTRIAL">
-                    <div class="overlay position-absolute w-100 h-100" style="top:0; left:0; background-color: rgba(0, 0, 0, 0.5);"></div>
-                    <span class="text-white position-absolute" style="bottom:10px; left:10px;">INGENIERÍA INDUSTRIAL</span>
-                </a>
+            <!-- Ingeniería Industrial -->
+            <div class="program-card">
+                <img src="{% static 'img/industrial.jpg' %}" alt="INGENIERÍA INDUSTRIAL" class="program-image">
+                <div class="program-overlay">
+                    <h2 class="program-title">INGENIERÍA<br>INDUSTRIAL</h2>
+                </div>
+                <a href="#" class="program-link" aria-label="Ver programa de Ingeniería Industrial"></a>
             </div>
         </div>
     </div>
-</main>
+</div>
+
+<style>
+    /* Estilos para la página de programas */
+    body {
+        background-color: #fff;
+        font-family: 'Arial', sans-serif;
+    }
+    
+    .programs-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .main-title {
+        text-align: center;
+        font-size: 28px;
+        font-weight: bold;
+        margin: 40px 0;
+        color: #000;
+    }
+    
+    .programs-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+    }
+    
+    .program-row {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        flex-wrap: wrap;
+    }
+    
+    .program-card {
+        position: relative;
+        width: 280px;
+        height: 240px;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    
+    .commercial-card {
+        border: 2px solid #4285f4;
+    }
+    
+    .program-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: all 0.3s ease;
+    }
+    
+    .program-overlay {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.4) 50%, rgba(0, 0, 0, 0.1) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+    
+    .program-title {
+        color: white;
+        font-size: 22px;
+        font-weight: bold;
+        text-align: center;
+        margin: 0;
+        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+        transition: all 0.3s ease;
+    }
+    
+    .program-link {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1;
+    }
+    
+    /* Efecto hover */
+    .program-card:hover {
+        border-color: #1a73e8;
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(26, 115, 232, 0.3);
+        z-index: 2;
+    }
+    
+    .program-card:hover .program-overlay {
+        background: linear-gradient(to top, 
+            rgba(26, 115, 232, 0.9) 0%, 
+            rgba(26, 115, 232, 0.7) 50%, 
+            rgba(26, 115, 232, 0.4) 100%);
+    }
+    
+    /* Clase para aplicar escala de grises */
+    .grayscale {
+        filter: grayscale(100%);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 992px) {
+        .program-card {
+            width: 250px;
+            height: 210px;
+        }
+        
+        .program-title {
+            font-size: 20px;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .program-row {
+            gap: 20px;
+        }
+        
+        .program-card {
+            width: 220px;
+            height: 180px;
+        }
+        
+        .program-title {
+            font-size: 18px;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .program-row {
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .program-card {
+            width: 280px;
+            height: 200px;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.program-card');
+        const grid = document.getElementById('programsGrid');
+        
+        // Función para aplicar escala de grises a todas las tarjetas excepto la actual
+        function handleMouseEnter() {
+            cards.forEach(card => {
+                if (card !== this) {
+                    card.querySelector('.program-image').classList.add('grayscale');
+                }
+            });
+        }
+        
+        // Función para restaurar los colores originales
+        function handleMouseLeave() {
+            cards.forEach(card => {
+                card.querySelector('.program-image').classList.remove('grayscale');
+            });
+        }
+        
+        // Agregar event listeners a cada tarjeta
+        cards.forEach(card => {
+            card.addEventListener('mouseenter', handleMouseEnter);
+            card.addEventListener('mouseleave', handleMouseLeave);
+        });
+        
+        // También manejar el caso cuando el mouse sale del grid completo
+        grid.addEventListener('mouseleave', handleMouseLeave);
+    });
+</script>
+
 {% endblock %}

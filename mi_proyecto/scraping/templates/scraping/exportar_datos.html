@@ -4,34 +4,46 @@
 {% block title %}Exportar Datos{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
+<div class="container py-5">
     <h2 class="mb-4 text-primary text-center">Exportar Datos de Docentes</h2>
 
-    <form method="POST" class="mb-4">
+    <form method="POST" class="mb-5">
         {% csrf_token %}
-        <div class="form-group">
-            <label><strong>Selecciona los datos a incluir:</strong></label><br>
-            <div class="form-check form-check-inline">
-                <input class="form-check-input" type="checkbox" name="incluir_personal" id="personal" checked>
-                <label class="form-check-label" for="personal">Información Personal</label>
-            </div>
-            <div class="form-check form-check-inline">
-                <input class="form-check-input" type="checkbox" name="incluir_formacion" id="formacion" checked>
-                <label class="form-check-label" for="formacion">Formación Académica</label>
-            </div>
-            <div class="form-check form-check-inline">
-                <input class="form-check-input" type="checkbox" name="incluir_experiencia" id="experiencia" checked>
-                <label class="form-check-label" for="experiencia">Experiencia Profesional</label>
-            </div>
-            <div class="form-check form-check-inline">
-                <input class="form-check-input" type="checkbox" name="incluir_investigaciones" id="investigaciones" checked>
-                <label class="form-check-label" for="investigaciones">Investigaciones</label>
+        <div class="mb-4">
+            <label class="form-label"><strong>Selecciona los datos a incluir:</strong></label>
+            <div class="d-flex flex-wrap gap-3">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="incluir_personal" id="incluir_personal" checked>
+                    <label class="form-check-label" for="incluir_personal">Información Personal</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="incluir_formacion" id="incluir_formacion" checked>
+                    <label class="form-check-label" for="incluir_formacion">Formación Académica</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="incluir_experiencia" id="incluir_experiencia" checked>
+                    <label class="form-check-label" for="incluir_experiencia">Experiencia Profesional</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="incluir_investigaciones" id="incluir_investigaciones" checked>
+                    <label class="form-check-label" for="incluir_investigaciones">Investigaciones</label>
+                </div>
             </div>
         </div>
-        <button type="submit" class="btn btn-success">Exportar a Excel</button>
+
+        <div class="mb-4">
+            <label for="estructura" class="form-label"><strong>Estructura del archivo:</strong></label>
+            <select class="form-select" name="estructura" id="estructura" required>
+                <option value="una_hoja">Una sola hoja</option>
+                <option value="una_por_docente">Una hoja por docente</option>
+                <option value="una_por_tipo">Una hoja por tipo de dato</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-success w-100">Exportar a Excel</button>
     </form>
 
-    <hr>
+    <hr class="my-5">
 
     <h4 class="text-secondary">Scraping de Nuevos Datos</h4>
     <p>Presiona el botón para ejecutar el scraping directamente desde esta vista.</p>
@@ -39,45 +51,105 @@
     <button id="btnScraping" class="btn btn-primary mb-3">Ejecutar Scraping</button>
 
     <div id="progressContainer" class="progress mb-3" style="height: 25px; display: none;">
-        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" 
-             role="progressbar" style="width: 0%;">
-            Ejecutando...
-        </div>
+        <div id="progressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+             role="progressbar" style="width: 0%;">Esperando...</div>
     </div>
     <p id="scrapingStatus" class="text-info"></p>
+
+    <div id="scrapingConsole" class="bg-dark text-white p-3"
+         style="height: 250px; overflow-y: auto; display: none; font-family: monospace; font-size: 0.9rem; border-radius: 5px;">
+        <strong>Consola:</strong>
+        <div id="consoleOutput"></div>
+    </div>
 </div>
 {% endblock %}
 
 {% block extra_script %}
 <script>
+    let scrapingEnCurso = false;
+
     document.getElementById('btnScraping').addEventListener('click', function () {
         const btn = this;
         const progressBar = document.getElementById('progressBar');
         const progressContainer = document.getElementById('progressContainer');
         const statusText = document.getElementById('scrapingStatus');
+        const consoleBox = document.getElementById('scrapingConsole');
+        const consoleOutput = document.getElementById('consoleOutput');
 
         btn.disabled = true;
+        scrapingEnCurso = true;
+
         progressContainer.style.display = 'block';
-        progressBar.style.width = '25%';
-        progressBar.innerText = 'Ejecutando...';
+        consoleBox.style.display = 'block';
+        progressBar.style.width = '0%';
+        progressBar.innerText = 'Iniciando...';
         statusText.innerText = '';
+        consoleOutput.innerHTML = '';
+
+        const mensajes = [
+            "🔍 Conectando con la plataforma...",
+            "📡 Obteniendo listado de docentes...",
+            "📄 Descargando perfiles CvLAC...",
+            "📘 Extrayendo formación académica...",
+            "🧳 Procesando experiencia profesional...",
+            "🧪 Recolectando investigaciones...",
+            "🧼 Limpiando datos...",
+            "💾 Guardando en base de datos..."
+        ];
+
+        let progreso = 0;
+        let mensajeIndex = 0;
+
+        const barraInterval = setInterval(() => {
+            if (progreso < 90) {
+                progreso += 1;
+                progressBar.style.width = `${progreso}%`;
+                progressBar.innerText = `Ejecutando... ${progreso}%`;
+            }
+        }, 150);
+
+        const mensajeInterval = setInterval(() => {
+            if (mensajeIndex < mensajes.length) {
+                consoleOutput.innerHTML += mensajes[mensajeIndex] + "<br>";
+                consoleBox.scrollTop = consoleBox.scrollHeight;
+                mensajeIndex++;
+            }
+        }, 1000);
 
         fetch("{% url 'ejecutar_scraping' %}")
             .then(response => response.json())
             .then(data => {
+                clearInterval(barraInterval);
+                clearInterval(mensajeInterval);
                 progressBar.style.width = '100%';
                 progressBar.innerText = 'Completado';
                 statusText.innerText = data.mensaje || 'Scraping completado correctamente.';
+                consoleOutput.innerHTML += "<br><strong class='text-success'>✔ " + (data.mensaje || 'Scraping completado.') + "</strong>";
+                consoleBox.scrollTop = consoleBox.scrollHeight;
                 btn.disabled = false;
+                scrapingEnCurso = false;
             })
             .catch(error => {
+                clearInterval(barraInterval);
+                clearInterval(mensajeInterval);
                 progressBar.style.width = '100%';
                 progressBar.classList.remove('bg-success');
                 progressBar.classList.add('bg-danger');
                 progressBar.innerText = 'Error';
                 statusText.innerText = 'Ocurrió un error: ' + error;
+                consoleOutput.innerHTML += `<pre style="color:red;">Error: ${error}</pre>`;
                 btn.disabled = false;
+                scrapingEnCurso = false;
             });
+    });
+
+    window.addEventListener('beforeunload', function (e) {
+        if (scrapingEnCurso) {
+            const mensaje = 'El scraping está en ejecución. ¿Estás seguro de cerrar o recargar esta página?';
+            e.preventDefault();
+            e.returnValue = mensaje;
+            return mensaje;
+        }
     });
 </script>
 {% endblock %}

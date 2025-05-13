@@ -1,0 +1,8 @@
+User-agent: *
+Disallow: /admin/
+Disallow: /scraping/
+Disallow: /static/
+Allow: /static/*.css
+Allow: /static/*.js
+Allow: /static/*.png
+Allow: /static/*.jpg

@@ -1,3 +1,4 @@
+import re
 import requests
 from bs4 import BeautifulSoup, NavigableString
 from django.core.management.base import BaseCommand
@@ -8,6 +9,7 @@ from scraping.models import (
     FormacionAcademica,
     ExperienciaProfesional,
 )
+from django.db import connection
 
 GRUPLAC_URL = "https://scienti.minciencias.gov.co/gruplac/jsp/visualiza/visualizagr.jsp?nro=00000000003118"
 
@@ -23,6 +25,10 @@ class Command(BaseCommand):
         ExperienciaProfesional.objects.all().delete()
         PersonalInfo.objects.all().delete()
         Entry.objects.all().delete()
+
+        # Reiniciar autoincremento de ID
+        with connection.cursor() as cursor:
+            cursor.execute("DELETE FROM sqlite_sequence WHERE name='scraping_entry';")
 
         docentes = self.obtener_docentes()
         if not docentes:
@@ -70,7 +76,14 @@ class Command(BaseCommand):
         for row in tables[4].find_all("tr")[1:]:
             cols = row.find_all("td")
             if cols:
-                name = cols[0].get_text(strip=True)
+                raw_name = cols[0].get_text(strip=True)
+
+                # 🔍 Limpieza estricta y normalización
+                cleaned_name = re.sub(r'^[\d\W_]+', '', raw_name)  # elimina símbolos iniciales
+                cleaned_name = re.sub(r'[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]', '', cleaned_name)  # solo letras y espacios
+                cleaned_name = re.sub(r'\s{2,}', ' ', cleaned_name).strip()  # espacios extra
+                name = cleaned_name.lower().title()  # normaliza
+
                 link = cols[0].find("a")
                 href = link.get("href") if link else None
                 if href:
@@ -100,7 +113,7 @@ class Command(BaseCommand):
                     elif "par evaluador" in clave:
                         info_personal["par_evaluador"] = True
                     elif "nombre en citaciones" in clave:
-                        info_personal["nombre_citaciones"] = valor
+                        info_personal["nombre_citaciones"] = valor.title()
                     elif "nacionalidad" in clave:
                         info_personal["nacionalidad"] = valor
                     elif "sexo" in clave:
@@ -164,7 +177,7 @@ class Command(BaseCommand):
         return False
 
     def obtener_investigaciones_agrupadas(self, soup, entry):
-        procesadas = {"Formación Académica", "Experiencia profesional"}
+        procesadas = {"Formación Académica", "Experiencia profesional", "Hoja de vida"}
         datos_investigacion = {}
 
         for table in soup.find_all("table"):
@@ -187,3 +200,4 @@ class Command(BaseCommand):
                 entry=entry,
                 defaults={'datos': datos_investigacion}
             )
+

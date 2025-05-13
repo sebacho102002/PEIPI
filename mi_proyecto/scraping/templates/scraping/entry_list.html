@@ -1,26 +1,281 @@
 {% extends "base.html" %}
 
-{% block title %}Lista de Docentes{% endblock %}
+{% block title %}PEIPI - Lista de Docentes{% endblock %}
+
+{% block breadcrumbs %}
+<li class="breadcrumb-item active">Lista de Docentes</li>
+{% endblock %}
 
 {% block content %}
-<div class="container mt-5">
-    <h1 class="text-center mb-4">Docentes</h1>
-
-    <!-- 🔍 Búsqueda interactiva -->
-    <div class="form-group">
-        <input type="text" id="search-input" class="form-control" placeholder="Buscar docente...">
+<div class="docentes-container">
+    <div class="header-section">
+        <h1 class="section-title">Docentes</h1>
+        <p class="section-description">Gestiona la información de los docentes e investigadores</p>
     </div>
 
-    <div class="d-flex justify-content-between mb-3">
-        <a href="{% url 'entry_new' %}" class="btn btn-primary">Añadir nuevo Docente</a>
-        <a href="{% url 'exportar_datos' %}" class="btn btn-success">Exportar datos</a>
+    <div class="actions-container">
+        <div class="search-container">
+            <div class="search-wrapper">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="search-input" class="search-input" placeholder="Buscar docente por nombre, facultad o programa...">
+                <div class="search-loader" id="search-loader"></div>
+            </div>
+        </div>
+        
+        <div class="buttons-container">
+            <a href="{% url 'entry_new' %}" class="action-button add-button">
+                <i class="fas fa-user-plus"></i>
+                <span>Añadir Docente</span>
+            </a>
+            <a href="{% url 'exportar_datos' %}" class="action-button export-button">
+                <i class="fas fa-file-export"></i>
+                <span>Exportar Datos</span>
+            </a>
+        </div>
     </div>
 
-    <!-- 📄 Aquí se cargará la lista filtrada -->
-    <div id="results">
+    <div class="results-container" id="results">
+        <div class="loading-overlay" id="loading-overlay">
+            <div class="spinner"></div>
+        </div>
         {% include "scraping/_entry_list_items.html" %}
     </div>
+
+    <div class="no-results" id="no-results" style="display: none;">
+        <i class="fas fa-search fa-3x"></i>
+        <h3>No se encontraron resultados</h3>
+        <p>Intenta con otros términos de búsqueda</p>
+    </div>
 </div>
+
+<style>
+    /* Estilos para la lista de docentes */
+    .docentes-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    .header-section {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    
+    .section-title {
+        color: var(--primary-color);
+        font-size: 28px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        position: relative;
+        padding-bottom: 15px;
+    }
+    
+    .section-title::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80px;
+        height: 3px;
+        background-color: var(--accent-color);
+        border-radius: 3px;
+    }
+    
+    .section-description {
+        color: #666;
+        font-size: 16px;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .actions-container {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin-bottom: 25px;
+    }
+    
+    .search-container {
+        width: 100%;
+    }
+    
+    .search-wrapper {
+        position: relative;
+        width: 100%;
+    }
+    
+    .search-icon {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #666;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 12px 20px 12px 45px;
+        border: 1px solid #ddd;
+        border-radius: 50px;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+    
+    .search-input:focus {
+        outline: none;
+        border-color: var(--primary-color);
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .search-loader {
+        position: absolute;
+        right: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 20px;
+        height: 20px;
+        border: 2px solid rgba(0, 0, 0, 0.1);
+        border-top: 2px solid var(--primary-color);
+        border-radius: 50%;
+        display: none;
+        animation: spin 0.8s linear infinite;
+    }
+    
+    @keyframes spin {
+        0% { transform: translateY(-50%) rotate(0deg); }
+        100% { transform: translateY(-50%) rotate(360deg); }
+    }
+    
+    .buttons-container {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+    }
+    
+    .action-button {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        flex: 1;
+        min-width: 160px;
+    }
+    
+    .action-button i {
+        margin-right: 8px;
+        font-size: 16px;
+    }
+    
+    .add-button {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .add-button:hover {
+        background-color: #0d47a1;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    .export-button {
+        background-color: #4caf50;
+        color: white;
+    }
+    
+    .export-button:hover {
+        background-color: #388e3c;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+    
+    .results-container {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        position: relative;
+        min-height: 200px;
+    }
+    
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.8);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 10;
+    }
+    
+    .loading-overlay .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid rgba(0, 0, 0, 0.1);
+        border-top: 4px solid var(--primary-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    .no-results {
+        text-align: center;
+        padding: 40px 20px;
+        color: #666;
+    }
+    
+    .no-results i {
+        color: #ddd;
+        margin-bottom: 15px;
+    }
+    
+    .no-results h3 {
+        font-size: 20px;
+        margin-bottom: 10px;
+    }
+    
+    /* Responsive adjustments */
+    @media (min-width: 768px) {
+        .actions-container {
+            flex-direction: row;
+            align-items: center;
+        }
+        
+        .search-container {
+            flex: 2;
+        }
+        
+        .buttons-container {
+            flex: 1;
+            justify-content: flex-end;
+        }
+        
+        .action-button {
+            flex: none;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .action-button {
+            width: 100%;
+            justify-content: center;
+        }
+        
+        .section-title {
+            font-size: 24px;
+        }
+    }
+</style>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -28,19 +283,78 @@
 document.addEventListener("DOMContentLoaded", function () {
     const input = document.getElementById("search-input");
     const resultsContainer = document.getElementById("results");
-
+    const loadingOverlay = document.getElementById("loading-overlay");
+    const searchLoader = document.getElementById("search-loader");
+    const noResults = document.getElementById("no-results");
+    
+    let searchTimeout;
+    
     input.addEventListener("input", function () {
-        const query = input.value;
-        fetch(`?q=${query}`, {
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
+        // Mostrar indicador de carga
+        searchLoader.style.display = "block";
+        
+        // Limpiar timeout anterior
+        clearTimeout(searchTimeout);
+        
+        // Establecer un pequeño retraso para evitar demasiadas solicitudes
+        searchTimeout = setTimeout(() => {
+            const query = input.value;
+            
+            // Mostrar overlay de carga
+            loadingOverlay.style.display = "flex";
+            
+            fetch(`?q=${query}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                resultsContainer.innerHTML = data.html;
+                
+                // Verificar si hay resultados
+                if (data.html.trim() === "" || data.html.includes("No se encontraron docentes")) {
+                    noResults.style.display = "block";
+                    resultsContainer.style.display = "none";
+                } else {
+                    noResults.style.display = "none";
+                    resultsContainer.style.display = "block";
+                }
+                
+                // Ocultar indicadores de carga
+                searchLoader.style.display = "none";
+                loadingOverlay.style.display = "none";
+            })
+            .catch(error => {
+                console.error("Error en la búsqueda:", error);
+                searchLoader.style.display = "none";
+                loadingOverlay.style.display = "none";
+            });
+        }, 300);
+    });
+    
+    // Añadir animación de entrada a los elementos de la lista
+    function animateItems() {
+        const items = document.querySelectorAll('.docente-item');
+        items.forEach((item, index) => {
+            item.style.animation = `fadeInUp 0.3s ease forwards ${index * 0.05}s`;
+            item.style.opacity = "0";
+        });
+    }
+    
+    // Ejecutar animación inicial
+    animateItems();
+    
+    // Observar cambios en el contenedor de resultados para animar nuevos elementos
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+                animateItems();
             }
-        })
-        .then(response => response.json())
-        .then(data => {
-            resultsContainer.innerHTML = data.html;
         });
     });
+    
+    observer.observe(resultsContainer, { childList: true });
 });
 </script>
 {% endblock %}

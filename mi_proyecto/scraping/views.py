@@ -1,16 +1,15 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from .models import Entry, PersonalInfo, Investigacion, FormacionAcademica, ExperienciaProfesional
 from .forms import EntryForm
-from django.http import JsonResponse
-import json
-import os
-from django.http import HttpResponse
-from openpyxl import Workbook
+from django.http import JsonResponse, HttpResponse, StreamingHttpResponse
 from django.views.decorators.csrf import csrf_exempt
-from django.http import JsonResponse
 from django.template.loader import render_to_string
-from django.http import JsonResponse
 from django.core.management import call_command
+from openpyxl import Workbook
+import datetime
+import subprocess
+import os
+import json
 
 # 📌 Página de inicio
 def home_page(request):
@@ -18,8 +17,7 @@ def home_page(request):
 
 # 📌 Base
 def base(request):
-    entry = "Some entry data"
-    return render(request, 'base.html', {'entry': entry})
+    return render(request, 'base.html', {'entry': "Some entry data"})
 
 # 📌 Vista de Ingeniería de Sistemas
 def ingenieria_sistemas_view(request):
@@ -31,6 +29,7 @@ def ingenieria_sistemas_view(request):
         data = []
     return render(request, 'ingenieria_sistemas.html', {'data': data})
 
+# 📌 Lista de docentes con búsqueda
 def entry_list(request):
     query = request.GET.get("q")
     entries = Entry.objects.filter(name__icontains=query) if query else Entry.objects.all()
@@ -40,7 +39,6 @@ def entry_list(request):
         return JsonResponse({'html': html})
 
     return render(request, 'scraping/entry_list.html', {'entries': entries})
-
 
 # 📌 Vista detallada de un docente
 def entry_detail(request, pk):
@@ -58,7 +56,7 @@ def entry_detail(request, pk):
         'investigaciones': investigaciones,
     })
 
-# 📌 Crear nueva entrada
+# 📌 Crear entrada
 def entry_new(request):
     if request.method == "POST":
         form = EntryForm(request.POST)
@@ -69,7 +67,7 @@ def entry_new(request):
         form = EntryForm()
     return render(request, 'scraping/entry_edit.html', {'form': form})
 
-# 📌 Editar entrada existente
+# 📌 Editar entrada
 def entry_edit(request, pk):
     entry = get_object_or_404(Entry, pk=pk)
     if request.method == "POST":
@@ -81,13 +79,13 @@ def entry_edit(request, pk):
         form = EntryForm(instance=entry)
     return render(request, 'scraping/entry_edit.html', {'form': form})
 
-# 📌 Eliminar una entrada
+# 📌 Eliminar entrada
 def entry_delete(request, pk):
     entry = get_object_or_404(Entry, pk=pk)
     entry.delete()
     return redirect('entry_list')
 
-# 📌 Exportar JSON de los docentes
+# 📌 Exportar JSON de todos los docentes
 def extracted_data_list(request):
     entries = Entry.objects.all()
     data = []
@@ -112,72 +110,174 @@ def extracted_data_list(request):
 
     return JsonResponse(data, safe=False)
 
+# 📌 Exportar a Excel dinámico
 @csrf_exempt
 def exportar_datos_view(request):
     if request.method == 'POST':
-        seleccion = request.POST.getlist('opciones')
+        incluir_personal = 'incluir_personal' in request.POST
+        incluir_formacion = 'incluir_formacion' in request.POST
+        incluir_experiencia = 'incluir_experiencia' in request.POST
+        incluir_investigaciones = 'incluir_investigaciones' in request.POST
+        estructura = request.POST.get('estructura', 'una_hoja')  # Default: una sola hoja
+
         wb = Workbook()
-        ws = wb.active
-        ws.title = "Datos Exportados"
+        wb.remove(wb.active)
 
-        # Encabezados dinámicos
-        headers = []
-        if 'personal_info' in seleccion:
-            headers.extend(['Nombre', 'Nombre en Citaciones', 'Categoría', 'Par Evaluador', 'Nacionalidad', 'Sexo'])
-        if 'formacion' in seleccion:
-            headers.extend(['Nivel Académico', 'Institución Académica'])
-        if 'experiencia' in seleccion:
-            headers.extend(['Institución Laboral', 'Cargo', 'Desde', 'Hasta'])
-        if 'investigacion' in seleccion:
-            headers.extend(['Sección', 'Total de Ítems'])
+        entries = Entry.objects.all()
 
-        ws.append(headers)
+        if estructura == 'una_hoja':
+            ws = wb.create_sheet("Docentes")
+            encabezados = ['Nombre', 'URL']
+            if incluir_personal:
+                encabezados += ['Nombre en Citaciones', 'Categoría', 'Par Evaluador', 'Nacionalidad', 'Sexo']
+            if incluir_formacion:
+                encabezados += ['Nivel Académico', 'Institución']
+            if incluir_experiencia:
+                encabezados += ['Institución (Trabajo)', 'Cargo', 'Desde', 'Hasta']
+            if incluir_investigaciones:
+                encabezados += ['Investigaciones (Resumen)']
+            ws.append(encabezados)
 
-        for entry in Entry.objects.all():
-            fila = []
-            if 'personal_info' in seleccion:
-                pi = getattr(entry, 'personal_info', None)
-                fila.extend([
-                    pi.nombre if pi else '',
-                    pi.nombre_citaciones if pi else '',
-                    pi.categoria if pi else '',
-                    'Sí' if pi and pi.par_evaluador else 'No',
-                    pi.nacionalidad if pi else '',
-                    pi.sexo if pi else '',
-                ])
-            if 'formacion' in seleccion:
-                fa = getattr(entry, 'formacion_academica', None)
-                fila.extend([
-                    fa.nivel if fa else '',
-                    fa.institucion if fa else '',
-                ])
-            if 'experiencia' in seleccion:
-                ep = getattr(entry, 'experiencia_profesional', None)
-                fila.extend([
-                    ep.institucion if ep else '',
-                    ep.cargo if ep else '',
-                    ep.desde if ep else '',
-                    ep.hasta if ep else '',
-                ])
-            if 'investigacion' in seleccion:
-                inv = getattr(entry, 'investigaciones', None)
-                if inv and inv.datos:
-                    for seccion, cantidad in inv.datos.items():
-                        fila.extend([seccion, cantidad])
-                else:
-                    fila.extend(['', ''])
-            ws.append(fila)
+            for entry in entries:
+                fila = [entry.name, entry.href]
+                if incluir_personal:
+                    info = PersonalInfo.objects.filter(entry=entry).first()
+                    fila += [
+                        info.nombre_citaciones if info else '',
+                        info.categoria if info else '',
+                        'Sí' if info and info.par_evaluador else 'No',
+                        info.nacionalidad if info else '',
+                        info.sexo if info else '',
+                    ]
+                if incluir_formacion:
+                    formacion = FormacionAcademica.objects.filter(entry=entry).first()
+                    fila += [
+                        formacion.nivel if formacion else '',
+                        formacion.institucion if formacion else '',
+                    ]
+                if incluir_experiencia:
+                    exp = ExperienciaProfesional.objects.filter(entry=entry).first()
+                    fila += [
+                        exp.institucion if exp else '',
+                        exp.cargo if exp else '',
+                        exp.desde if exp else '',
+                        exp.hasta if exp else '',
+                    ]
+                if incluir_investigaciones:
+                    inv = Investigacion.objects.filter(entry=entry).first()
+                    resumen = ', '.join([f"{k}: {v}" for k, v in inv.datos.items()]) if inv and inv.datos else ''
+                    fila.append(resumen)
+                ws.append(fila)
 
+        elif estructura == 'una_por_docente':
+            for entry in entries:
+                ws = wb.create_sheet(entry.name[:31])
+                ws.append(['Campo', 'Valor'])
+
+                ws.append(['Nombre', entry.name])
+                ws.append(['URL', entry.href])
+
+                if incluir_personal:
+                    info = PersonalInfo.objects.filter(entry=entry).first()
+                    ws.append(['Nombre en Citaciones', info.nombre_citaciones if info else ''])
+                    ws.append(['Categoría', info.categoria if info else ''])
+                    ws.append(['Par Evaluador', 'Sí' if info and info.par_evaluador else 'No'])
+                    ws.append(['Nacionalidad', info.nacionalidad if info else ''])
+                    ws.append(['Sexo', info.sexo if info else ''])
+
+                if incluir_formacion:
+                    formacion = FormacionAcademica.objects.filter(entry=entry).first()
+                    ws.append(['Nivel Académico', formacion.nivel if formacion else ''])
+                    ws.append(['Institución', formacion.institucion if formacion else ''])
+
+                if incluir_experiencia:
+                    exp = ExperienciaProfesional.objects.filter(entry=entry).first()
+                    ws.append(['Institución (Trabajo)', exp.institucion if exp else ''])
+                    ws.append(['Cargo', exp.cargo if exp else ''])
+                    ws.append(['Desde', exp.desde if exp else ''])
+                    ws.append(['Hasta', exp.hasta if exp else ''])
+
+                if incluir_investigaciones:
+                    inv = Investigacion.objects.filter(entry=entry).first()
+                    if inv and inv.datos:
+                        for k, v in inv.datos.items():
+                            ws.append([f"{k}", v])
+
+        elif estructura == 'una_por_tipo':
+            if incluir_personal:
+                ws = wb.create_sheet("Información Personal")
+                ws.append(['Nombre', 'Nombre en Citaciones', 'Categoría', 'Par Evaluador', 'Nacionalidad', 'Sexo'])
+                for entry in entries:
+                    info = PersonalInfo.objects.filter(entry=entry).first()
+                    ws.append([
+                        entry.name,
+                        info.nombre_citaciones if info else '',
+                        info.categoria if info else '',
+                        'Sí' if info and info.par_evaluador else 'No',
+                        info.nacionalidad if info else '',
+                        info.sexo if info else '',
+                    ])
+
+            if incluir_formacion:
+                ws = wb.create_sheet("Formación Académica")
+                ws.append(['Nombre', 'Nivel Académico', 'Institución'])
+                for entry in entries:
+                    formacion = FormacionAcademica.objects.filter(entry=entry).first()
+                    ws.append([
+                        entry.name,
+                        formacion.nivel if formacion else '',
+                        formacion.institucion if formacion else '',
+                    ])
+
+            if incluir_experiencia:
+                ws = wb.create_sheet("Experiencia Profesional")
+                ws.append(['Nombre', 'Institución', 'Cargo', 'Desde', 'Hasta'])
+                for entry in entries:
+                    exp = ExperienciaProfesional.objects.filter(entry=entry).first()
+                    ws.append([
+                        entry.name,
+                        exp.institucion if exp else '',
+                        exp.cargo if exp else '',
+                        exp.desde if exp else '',
+                        exp.hasta if exp else '',
+                    ])
+
+            if incluir_investigaciones:
+                ws = wb.create_sheet("Investigaciones")
+                ws.append(['Nombre', 'Resumen'])
+                for entry in entries:
+                    inv = Investigacion.objects.filter(entry=entry).first()
+                    resumen = ', '.join([f"{k}: {v}" for k, v in inv.datos.items()]) if inv and inv.datos else ''
+                    ws.append([entry.name, resumen])
+
+        # Preparar para descarga
         response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = 'attachment; filename=datos_exportados.xlsx'
+        nombre_archivo = f"docentes_exportados_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx"
+        response['Content-Disposition'] = f'attachment; filename={nombre_archivo}'
         wb.save(response)
         return response
 
     return render(request, 'scraping/exportar_datos.html')
 
+# 📌 Ejecutar scraping desde la vista
 def ejecutar_scraping(request):
     try:
         call_command('extract_data')
         return JsonResponse({'mensaje': 'Scraping ejecutado exitosamente.'})
     except Exception as e:
         return JsonResponse({'mensaje': f'Error durante el scraping: {str(e)}'}, status=500)
+
+# 📌 Transmitir consola de scraping en tiempo real (SSE si se activa)
+def iniciar_scraping_view(request):
+    def generate():
+        process = subprocess.Popen(
+            ["python3", "manage.py", "extract_data"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        for line in iter(process.stdout.readline, ''):
+            yield f"data:{line.strip()}\n\n"
+        process.stdout.close()
+
+    return StreamingHttpResponse(generate(), content_type='text/event-stream')

@@ -1,100 +1,590 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ entry.name }}</title>
+{% extends "base.html" %}
+{% load static %}
 
-    <!-- Bootstrap CSS -->
-    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+{% block title %}PEIPI - {{ entry.name }}{% endblock %}
 
-    <style>
-        .data-section {
-            margin-bottom: 30px;
-        }
-        .table-custom {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .table-custom th, .table-custom td {
-            border: 1px solid #ddd;
-            padding: 8px;
-        }
-        .table-custom th {
-            background-color: #f8f9fa;
-            text-align: left;
-        }
-    </style>
-</head>
-<body>
-<div class="container mt-5">
-    <h1 class="mb-4 text-primary">{{ entry.id }}.- {{ entry.name }}</h1>
+{% block breadcrumbs %}
+<li class="breadcrumb-item"><a href="{% url 'entry_list' %}">Docentes</a></li>
+<li class="breadcrumb-item active">{{ entry.name }}</li>
+{% endblock %}
 
-    <p class="mb-4">
-        URL: <a href="{{ entry.href }}" class="text-info" target="_blank">{{ entry.href }}</a>
-    </p>
-
-    {% if personal_info %}
-    <div class="data-section">
-        <h2 class="mb-3 text-secondary">Información Personal</h2>
-        <table class="table-custom">
-            <tr><th>Nombre</th><td>{{ personal_info.nombre }}</td></tr>
-            <tr><th>Nombre en Citaciones</th><td>{{ personal_info.nombre_citaciones|default:"No disponible" }}</td></tr>
-            <tr><th>Categoría</th><td>{{ personal_info.categoria|default:"No disponible" }}</td></tr>
-            <tr><th>Par Evaluador</th><td>{% if personal_info.par_evaluador %}Sí{% else %}No{% endif %}</td></tr>
-            <tr><th>Nacionalidad</th><td>{{ personal_info.nacionalidad }}</td></tr>
-            <tr><th>Sexo</th><td>{{ personal_info.sexo|default:"No disponible" }}</td></tr>
-        </table>
+{% block content %}
+<div class="profile-container">
+    <div class="profile-header">
+        <div class="profile-header-content">
+            <div class="profile-avatar">
+                {% if entry.profile_image %}
+                <img src="{{ entry.profile_image.url }}" alt="{{ entry.name }}">
+                {% else %}
+                <div class="avatar-placeholder">
+                    <i class="fas fa-user-tie"></i>
+                </div>
+                {% endif %}
+            </div>
+            <div class="profile-info">
+                <h1 class="profile-name">{{ entry.name }}</h1>
+                {% if personal_info.categoria %}
+                <div class="profile-category">
+                    <span class="badge">{{ personal_info.categoria }}</span>
+                </div>
+                {% endif %}
+                <div class="profile-links">
+                    <a href="{{ entry.href }}" class="profile-link" target="_blank">
+                        <i class="fas fa-external-link-alt"></i> Ver perfil en CvLAC
+                    </a>
+                    {% if personal_info.orcid %}
+                    <a href="https://orcid.org/{{ personal_info.orcid }}" class="profile-link orcid-link" target="_blank">
+                        <i class="fab fa-orcid"></i> ORCID
+                    </a>
+                    {% endif %}
+                    {% if personal_info.email %}
+                    <a href="mailto:{{ personal_info.email }}" class="profile-link email-link">
+                        <i class="fas fa-envelope"></i> {{ personal_info.email }}
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="profile-actions">
+            <a href="{% url 'entry_edit' entry.pk %}" class="action-button edit-button">
+                <i class="fas fa-edit"></i> Editar
+            </a>
+            <a href="{% url 'entry_delete' entry.pk %}" class="action-button delete-button">
+                <i class="fas fa-trash-alt"></i> Eliminar
+            </a>
+            <a href="{% url 'entry_list' %}" class="action-button back-button">
+                <i class="fas fa-arrow-left"></i> Regresar
+            </a>
+        </div>
     </div>
-    {% endif %}
-
-    {% if formacion %}
-    <div class="data-section">
-        <h2 class="mb-3 text-secondary">Formación Académica</h2>
-        <table class="table-custom">
-            <tr><th>Nivel</th><td>{{ formacion.nivel|default:"No disponible" }}</td></tr>
-            <tr><th>Institución</th><td>{{ formacion.institucion|default:"No disponible" }}</td></tr>
-        </table>
-    </div>
-    {% endif %}
-
-    {% if experiencia %}
-    <div class="data-section">
-        <h2 class="mb-3 text-secondary">Experiencia Profesional</h2>
-        <table class="table-custom">
-            <tr><th>Institución</th><td>{{ experiencia.institucion|default:"No disponible" }}</td></tr>
-            <tr><th>Cargo</th><td>{{ experiencia.cargo|default:"No disponible" }}</td></tr>
-            <tr><th>Desde</th><td>{{ experiencia.desde|default:"Desconocido" }}</td></tr>
-            <tr><th>Hasta</th><td>{{ experiencia.hasta|default:"Actual" }}</td></tr>
-        </table>
-    </div>
-    {% endif %}
-
-    <div class="data-section">
-        <h2 class="mb-3 text-secondary">Investigaciones (Secciones)</h2>
-        {% if investigaciones and investigaciones.datos %}
-        <table class="table-custom">
-            <thead>
-                <tr>
-                    <th>Sección</th>
-                    <th>Total de ítems</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for seccion, cantidad in investigaciones.datos.items %}
-                <tr>
-                    <td>{{ seccion }}</td>
-                    <td>{{ cantidad }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <p>No hay investigaciones registradas.</p>
+    
+    <div class="profile-body">
+        <div class="profile-section personal-info">
+            <div class="section-header">
+                <i class="fas fa-user section-icon"></i>
+                <h2 class="section-title">Información Personal</h2>
+            </div>
+            <div class="section-content">
+                <div class="info-grid">
+                    {% if personal_info.nombre %}
+                    <div class="info-item">
+                        <div class="info-label">Nombre Completo</div>
+                        <div class="info-value">{{ personal_info.nombre }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if personal_info.nombre_citaciones %}
+                    <div class="info-item">
+                        <div class="info-label">Nombre en Citaciones</div>
+                        <div class="info-value">{{ personal_info.nombre_citaciones }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if personal_info.nacionalidad %}
+                    <div class="info-item">
+                        <div class="info-label">Nacionalidad</div>
+                        <div class="info-value">{{ personal_info.nacionalidad }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if personal_info.sexo %}
+                    <div class="info-item">
+                        <div class="info-label">Sexo</div>
+                        <div class="info-value">{{ personal_info.sexo }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if personal_info.par_evaluador is not None %}
+                    <div class="info-item">
+                        <div class="info-label">Par Evaluador</div>
+                        <div class="info-value">
+                            {% if personal_info.par_evaluador %}
+                            <span class="badge success-badge"><i class="fas fa-check"></i> Sí</span>
+                            {% else %}
+                            <span class="badge neutral-badge"><i class="fas fa-times"></i> No</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        {% if formacion %}
+        <div class="profile-section education">
+            <div class="section-header">
+                <i class="fas fa-graduation-cap section-icon"></i>
+                <h2 class="section-title">Formación Académica</h2>
+            </div>
+            <div class="section-content">
+                <div class="education-card">
+                    {% if formacion.nivel %}
+                    <div class="education-level">{{ formacion.nivel }}</div>
+                    {% endif %}
+                    
+                    {% if formacion.institucion %}
+                    <div class="education-institution">
+                        <i class="fas fa-university"></i> {{ formacion.institucion }}
+                    </div>
+                    {% endif %}
+                    
+                    {% if formacion.titulo %}
+                    <div class="education-title">{{ formacion.titulo }}</div>
+                    {% endif %}
+                    
+                    {% if formacion.year %}
+                    <div class="education-year">
+                        <i class="far fa-calendar-alt"></i> {{ formacion.year }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
         {% endif %}
+        
+        {% if experiencia %}
+        <div class="profile-section experience">
+            <div class="section-header">
+                <i class="fas fa-briefcase section-icon"></i>
+                <h2 class="section-title">Experiencia Profesional</h2>
+            </div>
+            <div class="section-content">
+                <div class="experience-card">
+                    {% if experiencia.cargo %}
+                    <div class="experience-position">{{ experiencia.cargo }}</div>
+                    {% endif %}
+                    
+                    {% if experiencia.institucion %}
+                    <div class="experience-company">
+                        <i class="fas fa-building"></i> {{ experiencia.institucion }}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="experience-period">
+                        <i class="far fa-clock"></i> 
+                        {% if experiencia.desde %}{{ experiencia.desde }}{% else %}Desconocido{% endif %} - 
+                        {% if experiencia.hasta %}{{ experiencia.hasta }}{% else %}Actual{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="profile-section research">
+            <div class="section-header">
+                <i class="fas fa-flask section-icon"></i>
+                <h2 class="section-title">Investigaciones</h2>
+            </div>
+            <div class="section-content">
+                {% if investigaciones and investigaciones.datos %}
+                <div class="research-stats">
+                    {% for seccion, cantidad in investigaciones.datos.items %}
+                    <div class="stat-card">
+                        <div class="stat-value">{{ cantidad }}</div>
+                        <div class="stat-label">{{ seccion }}</div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-research">
+                    <i class="fas fa-search"></i>
+                    <p>No hay investigaciones registradas para este docente.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
-
-    <a href="{% url 'entry_list' %}" class="btn btn-outline-secondary">Regresar</a>
 </div>
-</body>
-</html>
+
+<style>
+    /* Estilos para la página de perfil */
+    .profile-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    
+    /* Header del perfil */
+    .profile-header {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        padding: 25px;
+        margin-bottom: 25px;
+        position: relative;
+    }
+    
+    .profile-header-content {
+        display: flex;
+        align-items: center;
+        gap: 25px;
+        margin-bottom: 20px;
+    }
+    
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        overflow: hidden;
+        background-color: #f0f0f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 3px solid var(--primary-color);
+        flex-shrink: 0;
+    }
+    
+    .profile-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .avatar-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #e0e0e0;
+        color: #666;
+    }
+    
+    .avatar-placeholder i {
+        font-size: 48px;
+        color: #999;
+    }
+    
+    .profile-info {
+        flex: 1;
+    }
+    
+    .profile-name {
+        font-size: 28px;
+        font-weight: 700;
+        color: #333;
+        margin: 0 0 10px 0;
+    }
+    
+    .profile-category {
+        margin-bottom: 15px;
+    }
+    
+    .badge {
+        display: inline-block;
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 14px;
+        font-weight: 500;
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .success-badge {
+        background-color: #4caf50;
+    }
+    
+    .neutral-badge {
+        background-color: #9e9e9e;
+    }
+    
+    .profile-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .profile-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        color: #666;
+        text-decoration: none;
+        font-size: 14px;
+        transition: color 0.2s ease;
+    }
+    
+    .profile-link:hover {
+        color: var(--primary-color);
+    }
+    
+    .profile-link i {
+        color: var(--primary-color);
+    }
+    
+    .orcid-link i {
+        color: #A6CE39;
+    }
+    
+    .email-link i {
+        color: #D44638;
+    }
+    
+    .profile-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+    
+    .action-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 8px 15px;
+        border-radius: 6px;
+        font-size: 14px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.2s ease;
+    }
+    
+    .edit-button {
+        background-color: #fff8e1;
+        color: #f57f17;
+    }
+    
+    .edit-button:hover {
+        background-color: #ffecb3;
+        color: #e65100;
+    }
+    
+    .delete-button {
+        background-color: #ffebee;
+        color: #c62828;
+    }
+    
+    .delete-button:hover {
+        background-color: #ffcdd2;
+        color: #b71c1c;
+    }
+    
+    .back-button {
+        background-color: #e8eaf6;
+        color: #3949ab;
+    }
+    
+    .back-button:hover {
+        background-color: #c5cae9;
+        color: #283593;
+    }
+    
+    /* Cuerpo del perfil */
+    .profile-body {
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+    }
+    
+    .profile-section {
+        background-color: white;
+        border-radius: 10px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+    
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px 20px;
+        background-color: #f5f5f5;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .section-icon {
+        font-size: 20px;
+        color: var(--primary-color);
+        width: 24px;
+        text-align: center;
+    }
+    
+    .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin: 0;
+    }
+    
+    .section-content {
+        padding: 20px;
+    }
+    
+    /* Información personal */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 20px;
+    }
+    
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .info-label {
+        font-size: 14px;
+        color: #666;
+        font-weight: 500;
+    }
+    
+    .info-value {
+        font-size: 16px;
+        color: #333;
+    }
+    
+    /* Formación académica */
+    .education-card {
+        padding: 15px;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+        border-left: 4px solid #4285f4;
+    }
+    
+    .education-level {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+    }
+    
+    .education-institution {
+        font-size: 16px;
+        color: #555;
+        margin-bottom: 5px;
+    }
+    
+    .education-title {
+        font-size: 15px;
+        color: #666;
+        margin-bottom: 5px;
+    }
+    
+    .education-year {
+        font-size: 14px;
+        color: #777;
+    }
+    
+    /* Experiencia profesional */
+    .experience-card {
+        padding: 15px;
+        border-radius: 8px;
+        background-color: #f9f9f9;
+        border-left: 4px solid #34a853;
+    }
+    
+    .experience-position {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 5px;
+    }
+    
+    .experience-company {
+        font-size: 16px;
+        color: #555;
+        margin-bottom: 5px;
+    }
+    
+    .experience-period {
+        font-size: 14px;
+        color: #777;
+    }
+    
+    /* Investigaciones */
+    .research-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 15px;
+    }
+    
+    .stat-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        background-color: var(--primary-color);
+    }
+    
+    .stat-card:hover .stat-value,
+    .stat-card:hover .stat-label {
+        color: white;
+    }
+    
+    .stat-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: var(--primary-color);
+        margin-bottom: 5px;
+        transition: all 0.3s ease;
+    }
+    
+    .stat-label {
+        font-size: 14px;
+        color: #666;
+        transition: all 0.3s ease;
+    }
+    
+    .empty-research {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 30px;
+        text-align: center;
+        color: #999;
+    }
+    
+    .empty-research i {
+        font-size: 48px;
+        margin-bottom: 15px;
+        color: #ddd;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .profile-header-content {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .profile-links {
+            justify-content: center;
+        }
+        
+        .profile-actions {
+            justify-content: center;
+        }
+        
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .profile-header, .section-content {
+            padding: 15px;
+        }
+        
+        .profile-name {
+            font-size: 24px;
+        }
+        
+        .research-stats {
+            grid-template-columns: 1fr 1fr;
+        }
+    }
+</style>
+{% endblock %}
